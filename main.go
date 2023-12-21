@@ -1,10 +1,9 @@
 package main
 
 import (
-	"bufio"
-	"fmt"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/tarm/serial"
 	"go.uber.org/zap"
@@ -16,29 +15,48 @@ var (
 )
 
 func main() {
-	// Debug
-	baud, _ := strconv.Atoi(os.Getenv("SERIAL_BAUD_RATE"))
-	size, _ := strconv.Atoi(os.Getenv("SERIAL_DATA_SIZE"))
-	config := &serial.Config{
-		Name:        os.Getenv("SERIAL_DEVICE_NAME"),
-		Baud:        baud,
-		Size:        byte(size),
-		ReadTimeout: 1,
+	// Variables
+	name := os.Getenv("SERIAL_DEVICE_NAME")
+
+	baud, err := strconv.Atoi(os.Getenv("SERIAL_BAUD_RATE"))
+	if err != nil {
+		log.Fatal(err)
 	}
 
+	size, err := strconv.Atoi(os.Getenv("SERIAL_DATA_SIZE"))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	timeout, err := strconv.Atoi(os.Getenv("SERIAL_READ_TIMEOUT"))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Set up serial port for reading
+	config := &serial.Config{
+		Name:        name,
+		Baud:        baud,
+		Size:        byte(size),
+		ReadTimeout: time.Duration(timeout),
+	}
+
+	// Read bytes from the serial port
 	stream, err := serial.OpenPort(config)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	scanner := bufio.NewScanner(stream)
-	for scanner.Scan() {
-		fmt.Println(scanner.Text()) // Println will add back the final '\n'
-	}
-	if err := scanner.Err(); err != nil {
+	buf := make([]byte, size)
+	n, err := stream.Read(buf)
+	if err != nil {
 		log.Fatal(err)
 	}
 
+	// Print result
+	log.Infoln("%x", buf[:n])
+
+	// Exit
 	log.Info("End.")
 	os.Exit(0)
 }
