@@ -37,7 +37,7 @@ func main() {
 	config := &serial.Config{
 		Name:        name,
 		Baud:        baud,
-		Size:        byte(size),
+		Size:        8,
 		ReadTimeout: time.Duration(timeout),
 	}
 
