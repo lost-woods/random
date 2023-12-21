@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/tarm/serial"
 	"go.uber.org/zap"
@@ -16,11 +17,13 @@ var (
 
 func main() {
 	// Debug
+	baud, _ := strconv.Atoi(os.Getenv("SERIAL_BAUD_RATE"))
+	size, _ := strconv.Atoi(os.Getenv("SERIAL_DATA_SIZE"))
 	config := &serial.Config{
-		Name:        "/dev/random",
-		Baud:        9600,
+		Name:        os.Getenv("SERIAL_DEVICE_NAME"),
+		Baud:        baud,
+		Size:        byte(size),
 		ReadTimeout: 1,
-		Size:        8,
 	}
 
 	stream, err := serial.OpenPort(config)
