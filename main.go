@@ -17,6 +17,7 @@ var (
 	log          = zapLogger.Sugar()
 
 	trueRNG = newSerial()
+	port    = "777"
 )
 
 func randomNumber(c *gin.Context) {
@@ -66,7 +67,9 @@ func newSerial() *serial.Port {
 }
 
 func main() {
+	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
+
 	router.GET("/", randomNumber)
-	router.Run()
+	router.Run(":" + port)
 }
