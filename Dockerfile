@@ -18,5 +18,6 @@ RUN CGO_ENABLED=0 go build -o random -ldflags '-w -extldflags "-static"' .
 # Package the image ----------------------------
 FROM scratch
 
+EXPOSE 777
 COPY --from=build /workspace/random /usr/local/bin/random
 ENTRYPOINT ["random"]
