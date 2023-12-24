@@ -1,10 +1,12 @@
 package main
 
 import (
+	"net/http"
 	"os"
 	"strconv"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/tarm/serial"
 	"go.uber.org/zap"
 )
@@ -13,6 +15,10 @@ var (
 	zapLogger, _ = zap.NewProduction()
 	log          = zapLogger.Sugar()
 )
+
+func homePage(c *gin.Context) {
+	c.String(http.StatusOK, "Testing")
+}
 
 func main() {
 	// Variables
@@ -56,7 +62,8 @@ func main() {
 	// Print result
 	log.Infoln("%x", buf[:n])
 
-	// Exit
-	log.Info("End.")
-	os.Exit(0)
+	// Start Router
+	router := gin.Default()
+	router.GET("/", homePage)
+	router.Run()
 }
