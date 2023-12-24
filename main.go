@@ -1,10 +1,13 @@
 package main
 
 import (
+	"fmt"
+	"net/http"
 	"os"
 	"strconv"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/tarm/serial"
 	"go.uber.org/zap"
 )
@@ -12,18 +15,31 @@ import (
 var (
 	zapLogger, _ = zap.NewProduction()
 	log          = zapLogger.Sugar()
+
+	trueRNG = newSerial()
 )
 
-func main() {
+func randomNumber(c *gin.Context) {
 	// Variables
-	name := os.Getenv("SERIAL_DEVICE_NAME")
-
-	baud, err := strconv.Atoi(os.Getenv("SERIAL_BAUD_RATE"))
+	size, err := strconv.Atoi(os.Getenv("SERIAL_DATA_SIZE"))
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	size, err := strconv.Atoi(os.Getenv("SERIAL_DATA_SIZE"))
+	buf := make([]byte, size)
+	n, err := trueRNG.Read(buf)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Print result
+	c.String(http.StatusOK, fmt.Sprintf("%x", buf[:n]))
+}
+
+func newSerial() *serial.Port {
+	name := os.Getenv("SERIAL_DEVICE_NAME")
+
+	baud, err := strconv.Atoi(os.Getenv("SERIAL_BAUD_RATE"))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -37,26 +53,20 @@ func main() {
 	config := &serial.Config{
 		Name:        name,
 		Baud:        baud,
-		Size:        8,
+		Size:        8, // Hard coded by the library
 		ReadTimeout: time.Duration(timeout),
 	}
 
-	// Read bytes from the serial port
 	stream, err := serial.OpenPort(config)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	buf := make([]byte, size)
-	n, err := stream.Read(buf)
-	if err != nil {
-		log.Fatal(err)
-	}
+	return stream
+}
 
-	// Print result
-	log.Infoln("%x", buf[:n])
-
-	// Exit
-	log.Info("End.")
-	os.Exit(0)
+func main() {
+	router := gin.Default()
+	router.GET("/", randomNumber)
+	router.Run()
 }
