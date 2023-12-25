@@ -1,8 +1,8 @@
 package main
 
 import (
-	"encoding/binary"
 	"fmt"
+	"math"
 	"net/http"
 	"os"
 	"strconv"
@@ -54,7 +54,7 @@ func randomBytes(c *gin.Context) {
 }
 
 func randomNumber(c *gin.Context) {
-	size := 4
+	size := 1
 
 	buf := make([]byte, size)
 	_, err := trueRNG.Read(buf)
@@ -64,9 +64,29 @@ func randomNumber(c *gin.Context) {
 		return
 	}
 
+	//rng := binary.BigEndian.Uint32(buf) // 8 bits * size 4 = 32
+	//int32MaxNumber := binary.BigEndian.Uint32([]byte{0xFF, 0xFF, 0xFF, 0xFF})
+	rng := uint8(buf[0])
+	int32MaxNumber := uint8([]byte{0xFF}[0])
+	log.Info("[DEBUG] rng: %d int32MaxNumber: %d", rng, int32MaxNumber)
+
+	// Handle mod bias
+	remainder := float64(int32MaxNumber+1) / float64(10)
+	log.Info("Division result: %f", remainder)
+
+	remainder = math.Floor(remainder)
+	log.Info("Remainder: %f", remainder)
+
+	cutOffNumber := uint8(remainder * 10)
+	log.Info("Cutoff: %d", cutOffNumber)
+
+	if rng >= cutOffNumber {
+		c.String(http.StatusNotImplemented, "Encountered number out of bounds.")
+		return
+	}
+
 	// Print result
-	number := binary.BigEndian.Uint32(buf) // 8 bits * size 4 = 32
-	c.String(http.StatusOK, fmt.Sprintf("%d", number))
+	c.String(http.StatusOK, fmt.Sprintf("%d", (rng%10)+1))
 }
 
 func newSerial() *serial.Port {
