@@ -55,34 +55,38 @@ func randomBytes(c *gin.Context) {
 
 func randomNumber(c *gin.Context) {
 	size := 1
-
-	buf := make([]byte, size)
-	_, err := trueRNG.Read(buf)
-	if err != nil {
-		c.String(http.StatusInternalServerError, "Error fetching random bytes.")
-		log.Error(err)
-		return
-	}
-
-	//rng := binary.BigEndian.Uint32(buf) // 8 bits * size 4 = 32
-	//int32MaxNumber := binary.BigEndian.Uint32([]byte{0xFF, 0xFF, 0xFF, 0xFF})
-	rng := uint8(buf[0])
+	divisor := uint8(10)
 	int32MaxNumber := uint8([]byte{0xFF}[0])
-	log.Infof("[DEBUG] rng: %d int32MaxNumber: %d", rng, int32MaxNumber)
+	//int32MaxNumber := binary.BigEndian.Uint32([]byte{0xFF, 0xFF, 0xFF, 0xFF})
 
 	// Handle mod bias
-	remainder := (float64(int32MaxNumber) + float64(1)) / float64(10)
+	remainder := (float64(int32MaxNumber) + float64(1)) / float64(divisor)
 	log.Infof("Division result: %.2f", remainder)
 
 	remainder = math.Floor(remainder)
 	log.Infof("Remainder: %.2f", remainder)
 
-	cutOffNumber := uint8(remainder) * 10
+	cutOffNumber := uint8(remainder) * divisor
 	log.Infof("Cutoff: %d", cutOffNumber)
 
-	if rng >= cutOffNumber {
-		c.String(http.StatusNotImplemented, "Encountered number out of bounds.")
-		return
+	rng := uint8(0)
+	numberGenerated := false
+	for !numberGenerated {
+		buf := make([]byte, size)
+		_, err := trueRNG.Read(buf)
+		if err != nil {
+			c.String(http.StatusInternalServerError, "Error fetching random bytes.")
+			log.Error(err)
+			return
+		}
+
+		rng = uint8(buf[0])
+		//rng := binary.BigEndian.Uint32(buf) // 8 bits * size 4 = 32
+		log.Infof("[DEBUG] rng: %d int32MaxNumber: %d", rng, int32MaxNumber)
+
+		if rng < cutOffNumber {
+			numberGenerated = true
+		}
 	}
 
 	// Print result
