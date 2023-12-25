@@ -20,17 +20,27 @@ var (
 	port    = "777"
 )
 
-func randomNumber(c *gin.Context) {
+func randomBytes(c *gin.Context) {
+	maxSize := 256
+
 	sizeVar := c.DefaultQuery("size", "1")
 	size, err := strconv.Atoi(sizeVar)
 	if err != nil {
-		log.Fatal(err)
+		c.String(http.StatusBadRequest, "Size parameter can't be read.")
+		return
+	}
+
+	if size > maxSize {
+		c.String(http.StatusBadRequest, fmt.Sprintf("Size should not exceed %d bytes per request.", maxSize))
+		return
 	}
 
 	buf := make([]byte, size)
 	n, err := trueRNG.Read(buf)
 	if err != nil {
-		log.Fatal(err)
+		c.String(http.StatusInternalServerError, "Error fetching random bytes.")
+		log.Error(err)
+		return
 	}
 
 	// Print result
@@ -70,6 +80,6 @@ func main() {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
 
-	router.GET("/", randomNumber)
+	router.GET("/", randomBytes)
 	router.Run(":" + port)
 }
