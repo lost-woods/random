@@ -71,7 +71,7 @@ func randomNumber(c *gin.Context) {
 	log.Infof("[DEBUG] rng: %d int32MaxNumber: %d", rng, int32MaxNumber)
 
 	// Handle mod bias
-	remainder := float64(int32MaxNumber+1) / 10
+	remainder := (float64(int32MaxNumber) + float64(1)) / float64(10)
 	log.Infof("Division result: %.2f", remainder)
 
 	remainder = math.Floor(remainder)
