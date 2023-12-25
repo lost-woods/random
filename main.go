@@ -68,17 +68,17 @@ func randomNumber(c *gin.Context) {
 	//int32MaxNumber := binary.BigEndian.Uint32([]byte{0xFF, 0xFF, 0xFF, 0xFF})
 	rng := uint8(buf[0])
 	int32MaxNumber := uint8([]byte{0xFF}[0])
-	log.Info("[DEBUG] rng: %d int32MaxNumber: %d", rng, int32MaxNumber)
+	log.Infof("[DEBUG] rng: %d int32MaxNumber: %d", rng, int32MaxNumber)
 
 	// Handle mod bias
-	remainder := float64(int32MaxNumber+1) / float64(10)
-	log.Info("Division result: %f", remainder)
+	remainder := float64(int32MaxNumber+1) / 10
+	log.Infof("Division result: %.2f", remainder)
 
 	remainder = math.Floor(remainder)
-	log.Info("Remainder: %f", remainder)
+	log.Infof("Remainder: %.2f", remainder)
 
-	cutOffNumber := uint8(remainder * 10)
-	log.Info("Cutoff: %d", cutOffNumber)
+	cutOffNumber := uint8(remainder) * 10
+	log.Infof("Cutoff: %d", cutOffNumber)
 
 	if rng >= cutOffNumber {
 		c.String(http.StatusNotImplemented, "Encountered number out of bounds.")
