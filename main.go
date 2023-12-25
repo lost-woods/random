@@ -21,8 +21,8 @@ var (
 )
 
 func randomNumber(c *gin.Context) {
-	// Variables
-	size, err := strconv.Atoi(os.Getenv("SERIAL_DATA_SIZE"))
+	sizeVar := c.DefaultQuery("size", "1")
+	size, err := strconv.Atoi(sizeVar)
 	if err != nil {
 		log.Fatal(err)
 	}
