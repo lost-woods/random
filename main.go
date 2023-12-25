@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/binary"
 	"fmt"
 	"net/http"
 	"os"
@@ -52,6 +53,22 @@ func randomBytes(c *gin.Context) {
 	c.String(http.StatusOK, fmt.Sprintf("%x", buf[:n]))
 }
 
+func randomNumber(c *gin.Context) {
+	size := 4
+
+	buf := make([]byte, size)
+	_, err := trueRNG.Read(buf)
+	if err != nil {
+		c.String(http.StatusInternalServerError, "Error fetching random bytes.")
+		log.Error(err)
+		return
+	}
+
+	// Print result
+	number := binary.BigEndian.Uint32(buf) // 8 bits * size 4 = 32
+	c.String(http.StatusOK, fmt.Sprintf("%d", number))
+}
+
 func newSerial() *serial.Port {
 	name := os.Getenv("SERIAL_DEVICE_NAME")
 
@@ -86,5 +103,7 @@ func main() {
 	router := gin.Default()
 
 	router.GET("/", randomBytes)
+	router.GET("/number", randomNumber)
+
 	router.Run(":" + port)
 }
