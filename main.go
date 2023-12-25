@@ -26,7 +26,12 @@ func randomBytes(c *gin.Context) {
 	sizeVar := c.DefaultQuery("size", "1")
 	size, err := strconv.Atoi(sizeVar)
 	if err != nil {
-		c.String(http.StatusBadRequest, "Size parameter can't be read.")
+		c.String(http.StatusBadRequest, fmt.Sprintf("Size parameter should be an integer between 1 and %d bytes.", maxSize))
+		return
+	}
+
+	if size < 1 {
+		c.String(http.StatusBadRequest, "Size should not be smaller than 1 byte.")
 		return
 	}
 
