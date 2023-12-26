@@ -80,7 +80,7 @@ func randomNumber(c *gin.Context) {
 			return
 		}
 
-		rng := binary.BigEndian.Uint32(buf) // 8 bits * size 4 = 32
+		rng = binary.BigEndian.Uint32(buf) // 8 bits * size 4 = 32
 		log.Infof("[DEBUG] rng: %d int32MaxNumber: %d", rng, int32MaxNumber)
 
 		if rng < cutOffNumber {
