@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/binary"
 	"fmt"
 	"math"
 	"net/http"
@@ -54,10 +55,9 @@ func randomBytes(c *gin.Context) {
 }
 
 func randomNumber(c *gin.Context) {
-	size := 1
-	divisor := uint8(10)
-	int32MaxNumber := uint8([]byte{0xFF}[0])
-	//int32MaxNumber := binary.BigEndian.Uint32([]byte{0xFF, 0xFF, 0xFF, 0xFF})
+	size := 4
+	divisor := uint32(10)
+	int32MaxNumber := binary.BigEndian.Uint32([]byte{0xFF, 0xFF, 0xFF, 0xFF})
 
 	// Handle mod bias
 	remainder := (float64(int32MaxNumber) + float64(1)) / float64(divisor)
@@ -66,10 +66,10 @@ func randomNumber(c *gin.Context) {
 	remainder = math.Floor(remainder)
 	log.Infof("Remainder: %.2f", remainder)
 
-	cutOffNumber := uint8(remainder) * divisor
+	cutOffNumber := uint32(remainder) * divisor
 	log.Infof("Cutoff: %d", cutOffNumber)
 
-	rng := uint8(0)
+	rng := uint32(0)
 	numberGenerated := false
 	for !numberGenerated {
 		buf := make([]byte, size)
@@ -80,8 +80,7 @@ func randomNumber(c *gin.Context) {
 			return
 		}
 
-		rng = uint8(buf[0])
-		//rng := binary.BigEndian.Uint32(buf) // 8 bits * size 4 = 32
+		rng := binary.BigEndian.Uint32(buf) // 8 bits * size 4 = 32
 		log.Infof("[DEBUG] rng: %d int32MaxNumber: %d", rng, int32MaxNumber)
 
 		if rng < cutOffNumber {
