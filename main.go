@@ -89,7 +89,7 @@ func randomNumber(c *gin.Context) {
 	}
 
 	// Print result
-	c.String(http.StatusOK, fmt.Sprintf("%d", (rng%10)+1))
+	c.String(http.StatusOK, fmt.Sprintf("%d", (rng%divisor)+1))
 }
 
 func newSerial() *serial.Port {
