@@ -161,8 +161,8 @@ func main() {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
 
-	router.GET("/", randomBytes)
-	router.GET("/number", randomNumber)
+	router.GET("/", randomNumber)
+	router.GET("/bytes", randomBytes)
 
 	router.Run(":" + port)
 }
