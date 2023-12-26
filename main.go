@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/binary"
 	"fmt"
 	"math"
 	"net/http"
@@ -54,22 +55,62 @@ func randomBytes(c *gin.Context) {
 }
 
 func randomNumber(c *gin.Context) {
-	size := 1
-	divisor := uint8(10)
-	int32MaxNumber := uint8([]byte{0xFF}[0])
-	//int32MaxNumber := binary.BigEndian.Uint32([]byte{0xFF, 0xFF, 0xFF, 0xFF})
+	// Input
+	minVar := c.DefaultQuery("min", "1")
+	min, err := strconv.Atoi(minVar)
+	if err != nil {
+		c.String(http.StatusBadRequest, "The minimum value could not be read.")
+		return
+	}
+
+	maxVar := c.DefaultQuery("max", "20")
+	max, err := strconv.Atoi(maxVar)
+	if err != nil {
+		c.String(http.StatusBadRequest, "The maximum value could not be read.")
+		return
+	}
+
+	if min < -1000000000 {
+		c.String(http.StatusBadRequest, "The minimum value should not be lower than -1,000,000,000.")
+		return
+	}
+
+	if min >= 1000000000 {
+		c.String(http.StatusBadRequest, "The minimum value should not be higher than 999,999,999.")
+		return
+	}
+
+	if max <= -1000000000 {
+		c.String(http.StatusBadRequest, "The maximum value should not be lower than -999,999,999.")
+		return
+	}
+
+	if max > 1000000000 {
+		c.String(http.StatusBadRequest, "The maximum value should not be higher than 1,000,000,000.")
+		return
+	}
+
+	if min >= max {
+		c.String(http.StatusBadRequest, "The minimum value should be smaller than the maximum value.")
+		return
+	}
+
+	// Processing
+	size := 4 // Hard-coded for uint32 size
+	int32MaxNumber := binary.BigEndian.Uint32([]byte{0xFF, 0xFF, 0xFF, 0xFF})
+
+	divisor := uint32(max - min + 1) // Max divisor for -1B to +1B range both inclusive, including 0 is 2,000,000,001
+	log.Infof("Divisor: %d", divisor)
 
 	// Handle mod bias
-	remainder := (float64(int32MaxNumber) + float64(1)) / float64(divisor)
-	log.Infof("Division result: %.2f", remainder)
+	whole, remainder := math.Modf((float64(int32MaxNumber) + float64(1)) / float64(divisor))
+	log.Infof("Division result: %.2f %.2f", whole, remainder)
 
-	remainder = math.Floor(remainder)
-	log.Infof("Remainder: %.2f", remainder)
+	cutoffNumber := uint32(whole) * divisor // May overflow to 0
+	log.Infof("Cutoff: %d", cutoffNumber)
 
-	cutOffNumber := uint8(remainder) * divisor
-	log.Infof("Cutoff: %d", cutOffNumber)
-
-	rng := uint8(0)
+	// Generate the number
+	rng := uint32(0)
 	numberGenerated := false
 	for !numberGenerated {
 		buf := make([]byte, size)
@@ -80,17 +121,17 @@ func randomNumber(c *gin.Context) {
 			return
 		}
 
-		rng = uint8(buf[0])
-		//rng := binary.BigEndian.Uint32(buf) // 8 bits * size 4 = 32
+		rng = binary.BigEndian.Uint32(buf) // 8 bits * size 4 = 32
 		log.Infof("[DEBUG] rng: %d int32MaxNumber: %d", rng, int32MaxNumber)
 
-		if rng < cutOffNumber {
+		if remainder == float64(0) || rng < cutoffNumber { // If this is an exact division, skip the cutoff, which will have overflowed
 			numberGenerated = true
 		}
 	}
 
 	// Print result
-	c.String(http.StatusOK, fmt.Sprintf("%d", (rng%10)+1))
+	finalNumber := int32(float64(rng%divisor) + float64(min)) // can never exceed -1B or 1B, which is within signed int32 (2,147,483,647)
+	c.String(http.StatusOK, fmt.Sprintf("%d", finalNumber))
 }
 
 func newSerial() *serial.Port {
