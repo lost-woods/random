@@ -63,7 +63,7 @@ func randomNumber(c *gin.Context) {
 		return
 	}
 
-	maxVar := c.DefaultQuery("max", "20")
+	maxVar := c.DefaultQuery("max", "100")
 	max, err := strconv.Atoi(maxVar)
 	if err != nil {
 		c.String(http.StatusBadRequest, "The maximum value could not be read.")
