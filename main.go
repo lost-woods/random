@@ -130,7 +130,8 @@ func randomNumber(c *gin.Context) {
 	}
 
 	// Print result
-	c.String(http.StatusOK, fmt.Sprintf("%d", (rng%divisor)+1))
+	finalNumber := int32(float64(rng%divisor) + float64(min)) // can never exceed -1B or 1B, which is within signed int32 (2,147,483,647)
+	c.String(http.StatusOK, fmt.Sprintf("%d", finalNumber))
 }
 
 func newSerial() *serial.Port {
