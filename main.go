@@ -103,6 +103,7 @@ func randomNumber(c *gin.Context) {
 	log.Infof("Divisor: %d", divisor)
 
 	// Handle mod bias
+	// https://research.kudelskisecurity.com/2020/07/28/the-definitive-guide-to-modulo-bias-and-how-to-avoid-it/
 	whole, remainder := math.Modf((float64(int32MaxNumber) + float64(1)) / float64(divisor))
 	log.Infof("Division result: %.2f %.2f", whole, remainder)
 
