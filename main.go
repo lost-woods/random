@@ -98,16 +98,12 @@ func randomNumber(c *gin.Context) {
 	// Processing
 	size := 4 // Hard-coded for uint32 size
 	int32MaxNumber := binary.BigEndian.Uint32([]byte{0xFF, 0xFF, 0xFF, 0xFF})
-
 	divisor := uint32(max - min + 1) // Max divisor for -1B to +1B range both inclusive, including 0 is 2,000,000,001
-	log.Infof("Divisor: %d", divisor)
 
 	// Handle mod bias
+	// https://research.kudelskisecurity.com/2020/07/28/the-definitive-guide-to-modulo-bias-and-how-to-avoid-it/
 	whole, remainder := math.Modf((float64(int32MaxNumber) + float64(1)) / float64(divisor))
-	log.Infof("Division result: %.2f %.2f", whole, remainder)
-
 	cutoffNumber := uint32(whole) * divisor // May overflow to 0
-	log.Infof("Cutoff: %d", cutoffNumber)
 
 	// Generate the number
 	rng := uint32(0)
@@ -121,16 +117,14 @@ func randomNumber(c *gin.Context) {
 			return
 		}
 
-		rng = binary.BigEndian.Uint32(buf) // 8 bits * size 4 = 32
-		log.Infof("[DEBUG] rng: %d int32MaxNumber: %d", rng, int32MaxNumber)
-
+		rng = binary.BigEndian.Uint32(buf)                 // 8 bits * size 4 = 32
 		if remainder == float64(0) || rng < cutoffNumber { // If this is an exact division, skip the cutoff, which will have overflowed
 			numberGenerated = true
 		}
 	}
 
 	// Print result
-	finalNumber := int32(float64(rng%divisor) + float64(min)) // can never exceed -1B or 1B, which is within signed int32 (2,147,483,647)
+	finalNumber := int32(float64(rng%divisor) + float64(min)) // Can never exceed -1B or 1B, which is within signed int32 (2,147,483,647)
 	c.String(http.StatusOK, fmt.Sprintf("%d", finalNumber))
 }
 
