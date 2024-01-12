@@ -247,8 +247,8 @@ func randomCards(c *gin.Context) {
 	}
 
 	// Remove trailing \n
-	if len(out) >= 2 {
-		out = out[:len(out)-2]
+	if len(out) > 0 {
+		out = out[:len(out)-1]
 	}
 
 	c.String(http.StatusOK, out)
