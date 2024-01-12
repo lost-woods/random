@@ -23,6 +23,55 @@ var (
 	port    = "777"
 )
 
+type Card struct {
+	Value string `json:"value"`
+	Suit  string `json:"suit"`
+}
+
+func addDeck(numDecks int, jokers bool) []Card {
+	deck := []Card{}
+	decksAdded := 0
+
+	suits := []string{"Hearts", "Diamonds", "Clubs", "Spades"}
+
+	for decksAdded < numDecks {
+		i := 0
+
+		for i < 4 {
+			suit := suits[i]
+
+			deck = append(deck, Card{Value: "Ace", Suit: suit})
+			deck = append(deck, Card{Value: "Two", Suit: suit})
+			deck = append(deck, Card{Value: "Three", Suit: suit})
+			deck = append(deck, Card{Value: "Four", Suit: suit})
+			deck = append(deck, Card{Value: "Five", Suit: suit})
+			deck = append(deck, Card{Value: "Six", Suit: suit})
+			deck = append(deck, Card{Value: "Seven", Suit: suit})
+			deck = append(deck, Card{Value: "Eight", Suit: suit})
+			deck = append(deck, Card{Value: "Nine", Suit: suit})
+			deck = append(deck, Card{Value: "Ten", Suit: suit})
+			deck = append(deck, Card{Value: "Jack", Suit: suit})
+			deck = append(deck, Card{Value: "Queen", Suit: suit})
+			deck = append(deck, Card{Value: "King", Suit: suit})
+
+			i += 1
+		}
+
+		if jokers {
+			deck = append(deck, Card{Value: "Joker", Suit: "Red"})
+			deck = append(deck, Card{Value: "Joker", Suit: "Black"})
+		}
+
+		decksAdded += 1
+	}
+
+	return deck
+}
+
+func removeCard(deck []Card, index int) []Card {
+	return append(deck[:index], deck[index+1:]...)
+}
+
 func generateRandomNumber(min int, max int) (int32, error) {
 	// Sanity check
 	if min < -1000000000 {
@@ -134,6 +183,74 @@ func randomNumber(c *gin.Context) {
 	c.String(http.StatusOK, fmt.Sprintf("%d", rng))
 }
 
+func randomCards(c *gin.Context) {
+	// Input
+	numDecksVar := c.DefaultQuery("decks", "1")
+	numDecks, err := strconv.Atoi(numDecksVar)
+	if err != nil {
+		c.String(http.StatusBadRequest, "The number of decks could not be read.")
+		return
+	}
+
+	jokersVar := c.DefaultQuery("jokers", "false")
+	jokers, err := strconv.ParseBool(jokersVar)
+	if err != nil {
+		c.String(http.StatusBadRequest, "The jokers flag could not be read.")
+		return
+	}
+
+	numCardsVar := c.DefaultQuery("cards", "1")
+	numCards, err := strconv.Atoi(numCardsVar)
+	if err != nil {
+		c.String(http.StatusBadRequest, "The number of cards to pick could not be read.")
+		return
+	}
+
+	if numDecks < 1 {
+		c.String(http.StatusBadRequest, "There must be at least 1 deck.")
+		return
+	}
+
+	if numDecks > 100 {
+		c.String(http.StatusBadRequest, "There can be a maximum of 100 decks.")
+		return
+	}
+
+	if numCards < 1 {
+		c.String(http.StatusBadRequest, "There must be at least 1 card to pick.")
+		return
+	}
+
+	// Generate new deck
+	deck := addDeck(numDecks, jokers)
+
+	// Pick and display cards
+	if numCards > len(deck) {
+		c.String(http.StatusBadRequest, "There are more cards to pick than cards in the deck.")
+		return
+	}
+
+	out := ""
+	for numCards > 0 {
+		index, err := generateRandomNumber(0, len(deck)-1)
+		if err != nil {
+			c.String(http.StatusInternalServerError, "Error fetching a random card.")
+			return
+		}
+
+		out = out + deck[int(index)].Value + " of " + deck[int(index)].Suit + ", "
+
+		deck = removeCard(deck, int(index))
+		numCards = numCards - 1
+	}
+
+	if len(out) >= 2 {
+		out = out[:len(out)-2]
+	}
+
+	c.String(http.StatusOK, out)
+}
+
 func newSerial() *serial.Port {
 	name := os.Getenv("SERIAL_DEVICE_NAME")
 
@@ -169,6 +286,7 @@ func main() {
 
 	router.GET("/", randomNumber)
 	router.GET("/bytes", randomBytes)
+	router.GET("/cards", randomCards)
 
 	router.Run(":" + port)
 }
