@@ -232,18 +232,21 @@ func randomCards(c *gin.Context) {
 
 	out := ""
 	for numCards > 0 {
-		index, err := generateRandomNumber(0, len(deck)-1)
-		if err != nil {
-			c.String(http.StatusInternalServerError, "Error fetching a random card.")
-			return
+		index := int32(0)
+		if len(deck) > 1 {
+			index, err = generateRandomNumber(0, len(deck)-1)
+			if err != nil {
+				c.String(http.StatusInternalServerError, "Error fetching a random card.")
+				return
+			}
 		}
 
-		out = out + deck[int(index)].Value + " of " + deck[int(index)].Suit + ", "
-
+		out = out + deck[int(index)].Value + " of " + deck[int(index)].Suit + "\n"
 		deck = removeCard(deck, int(index))
 		numCards = numCards - 1
 	}
 
+	// Remove trailing \n
 	if len(out) >= 2 {
 		out = out[:len(out)-2]
 	}
