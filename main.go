@@ -254,6 +254,97 @@ func randomCards(c *gin.Context) {
 	c.String(http.StatusOK, out)
 }
 
+func randomStrings(c *gin.Context) {
+	maxSize := 256
+
+	// Input
+	sizeVar := c.DefaultQuery("size", "10")
+	size, err := strconv.Atoi(sizeVar)
+	if err != nil {
+		c.String(http.StatusBadRequest, "The size value could not be read.")
+		return
+	}
+
+	lowersVar := c.DefaultQuery("lowercase", "true")
+	lowers, err := strconv.ParseBool(lowersVar)
+	if err != nil {
+		c.String(http.StatusBadRequest, "The lowercase flag could not be read.")
+		return
+	}
+
+	uppersVar := c.DefaultQuery("uppercase", "true")
+	uppers, err := strconv.ParseBool(uppersVar)
+	if err != nil {
+		c.String(http.StatusBadRequest, "The uppercase flag could not be read.")
+		return
+	}
+
+	numbersVar := c.DefaultQuery("numbers", "true")
+	numbers, err := strconv.ParseBool(numbersVar)
+	if err != nil {
+		c.String(http.StatusBadRequest, "The numbers flag could not be read.")
+		return
+	}
+
+	symbolsVar := c.DefaultQuery("symbols", "true")
+	symbols, err := strconv.ParseBool(symbolsVar)
+	if err != nil {
+		c.String(http.StatusBadRequest, "The symbols flag could not be read.")
+		return
+	}
+
+	if size < 1 {
+		c.String(http.StatusBadRequest, "The string must have at least size 1.")
+		return
+	}
+
+	if size > maxSize {
+		c.String(http.StatusBadRequest, fmt.Sprintf("The string must have at most size %d.", maxSize))
+		return
+	}
+
+	if !uppers && !lowers && !numbers && !symbols {
+		c.String(http.StatusBadRequest, "At least one flag must be set.")
+		return
+	}
+
+	chars := ""
+	lowerChars := "abcdefghijklmnopqrstuvwxyz"
+	upperChars := "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	numberChars := "0123456789"
+	symbolsChars := "!#$%&()*+,-./:;<=>?@[]^_{|}~"
+
+	if lowers {
+		chars = chars + lowerChars
+	}
+
+	if uppers {
+		chars = chars + upperChars
+	}
+
+	if numbers {
+		chars = chars + numberChars
+	}
+
+	if symbols {
+		chars = chars + symbolsChars
+	}
+
+	out := ""
+	for size > 0 {
+		index, err := generateRandomNumber(0, len(chars)-1)
+		if err != nil {
+			c.String(http.StatusInternalServerError, "Error fetching a random character.")
+			return
+		}
+
+		out = out + string(chars[int(index)])
+		size = size - 1
+	}
+
+	c.String(http.StatusOK, out)
+}
+
 func newSerial() *serial.Port {
 	name := os.Getenv("SERIAL_DEVICE_NAME")
 
@@ -290,6 +381,7 @@ func main() {
 	router.GET("/", randomNumber)
 	router.GET("/bytes", randomBytes)
 	router.GET("/cards", randomCards)
+	router.GET("/strings", randomStrings)
 
 	router.Run(":" + port)
 }
