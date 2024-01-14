@@ -345,6 +345,56 @@ func randomStrings(c *gin.Context) {
 	c.String(http.StatusOK, out)
 }
 
+func randomPercent(c *gin.Context) {
+	// Input
+	percentVar := c.DefaultQuery("percent", "25")
+	percent, err := strconv.ParseFloat(percentVar, 64)
+	if err != nil {
+		c.String(http.StatusBadRequest, "The percent chance value could not be read.")
+		return
+	}
+
+	if percent <= float64(0) {
+		c.String(http.StatusBadRequest, "The percent chance cannot be 0 or lower.")
+		return
+	}
+
+	if percent >= float64(100) {
+		c.String(http.StatusBadRequest, "The percent chance cannot be 100 or larger.")
+		return
+	}
+
+	success := 1
+	retries := 5
+	chance := float64(100) / percent
+	whole, remainder := math.Modf(chance)
+	for retries > 0 && remainder != float64(0) {
+		success = success * 10
+		chance = chance * 10
+
+		whole, remainder = math.Modf(chance)
+		retries = retries - 1
+	}
+
+	if int(whole) <= 1 || int(whole) > 1000000000 {
+		c.String(http.StatusBadRequest, "The percent chance is too small.")
+		return
+	}
+
+	roll, err := generateRandomNumber(1, int(whole))
+	if err != nil {
+		c.String(http.StatusInternalServerError, "Error fetching a random number.")
+		return
+	}
+
+	out := "Fail"
+	if int(roll) <= success {
+		out = "Pass"
+	}
+
+	c.String(http.StatusOK, fmt.Sprintf("Rolled %d from %d/%d\n%s", int(roll), success, int(whole), out))
+}
+
 func newSerial() *serial.Port {
 	name := os.Getenv("SERIAL_DEVICE_NAME")
 
@@ -382,6 +432,7 @@ func main() {
 	router.GET("/bytes", randomBytes)
 	router.GET("/cards", randomCards)
 	router.GET("/strings", randomStrings)
+	router.GET("/percent", randomPercent)
 
 	router.Run(":" + port)
 }
