@@ -365,7 +365,7 @@ func randomPercent(c *gin.Context) {
 	}
 
 	success := 1
-	retries := 5
+	retries := 6
 	chance := float64(100) / percent
 	whole, remainder := math.Modf(chance)
 	for retries > 0 && remainder != float64(0) {
