@@ -1,4 +1,4 @@
-module github.com/dmahmalat/random
+module github.com/lost-woods/random
 
 go 1.19
 

@@ -1,4 +1,4 @@
-[![Build](https://github.com/dmahmalat/random/actions/workflows/publish.yml/badge.svg)](https://github.com/dmahmalat/random/actions/workflows/publish.yml)
+[![Build](https://github.com/lost-woods/random/actions/workflows/publish.yml/badge.svg)](https://github.com/lost-woods/random/actions/workflows/publish.yml)
 
 # random
 True RNG REST API Server
