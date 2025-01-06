@@ -8,6 +8,7 @@ Environment Variables:
 `SERIAL_BAUD_RATE` 300
 `SERIAL_READ_TIMEOUT` 10
 `SERIAL_DEVICE_NAME` /dev/TrueRNG (or wherever the TrueRNG serial device is located)
+`API_KEY` empty (or string that is expected in the request header (with key `X-API-KEY`) to grant access to the API)
 
 
 Supports the following endpoints:
