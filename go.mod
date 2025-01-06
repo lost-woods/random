@@ -1,6 +1,6 @@
 module github.com/lost-woods/random
 
-go 1.19.0
+go 1.19
 
 require (
 	github.com/gin-contrib/cors v1.7.3
