@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gin-contrib/cors"
 	"github.com/tarm/serial"
 	"go.uber.org/zap"
 )
@@ -424,9 +425,25 @@ func newSerial() *serial.Port {
 	return stream
 }
 
+func checkHeader(headerName, expectedValue string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// If the header doesn't match the expected value, abort the request and stop further handlers
+		if c.GetHeader(headerName) != expectedValue {
+			c.Abort()
+			return
+		}
+
+		// Proceed with the request if the header is valid
+		c.Next()
+	}
+}
+
 func main() {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
+
+	router.Use(cors.Default())
+	router.Use(checkHeader("X-API-KEY", os.Getenv("API_KEY")))
 
 	router.GET("/", randomNumber)
 	router.GET("/bytes", randomBytes)
