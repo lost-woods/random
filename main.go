@@ -10,8 +10,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
 	"github.com/tarm/serial"
 	"go.uber.org/zap"
 )
@@ -442,7 +442,13 @@ func main() {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
 
-	router.Use(cors.Default())
+	router.Use(cors.New(cors.Config{
+		AllowMethods:     []string{"GET"},
+		AllowHeaders:     []string{"X-API-KEY"},
+		AllowAllOrigins:  true,
+		AllowCredentials: false,
+		MaxAge:           12 * time.Hour,
+	}))
 	router.Use(checkHeader("X-API-KEY", os.Getenv("API_KEY")))
 
 	router.GET("/", randomNumber)
