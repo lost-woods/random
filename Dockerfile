@@ -1,5 +1,5 @@
 # Build Dependencies ---------------------------
-FROM golang:1.21-alpine AS build_deps
+FROM golang:1.23.4-alpine AS build_deps
 
 RUN apk add --no-cache git
 
