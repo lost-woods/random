@@ -1,8 +1,6 @@
 module github.com/lost-woods/random
 
-go 1.21
-
-toolchain go1.23.2
+go 1.23.4
 
 require (
 	github.com/gin-contrib/cors v1.7.3
