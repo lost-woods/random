@@ -1,94 +1,98 @@
 package rng
 
 import (
-    "errors"
-    "strconv"
-    "strings"
+	"errors"
+	"strconv"
+	"strings"
 )
 
-// ParsePercentExact parses percent string EXACTLY into num/den for P(pass)=num/den.
-// Accepts 0% (always fail) and 100% (always pass).
-// Exact up to 7 decimal places because den=100*10^d must be <= 1,000,000,000.
+// ParsePercentExact parses a percentage into an exact probability num/den.
+//
+// Accepts:
+//
+//	"25", "25%", "25.432", "25.432%"
+//	Leading/trailing spaces and an optional leading '+' are allowed.
+//
+// Rejects negatives and values > 100.
+// Exact up to 7 decimal places (den = 100 * 10^d <= 1,000,000,000).
 func ParsePercentExact(percentStr string) (num int, den int, err error) {
-    s := strings.TrimSpace(percentStr)
-    if s == "" {
-        return 0, 0, errors.New("percent is empty")
-    }
-    if strings.HasPrefix(s, "+") {
-        s = strings.TrimPrefix(s, "+")
-    }
-    if strings.HasPrefix(s, "-") {
-        return 0, 0, errors.New("percent must not be negative")
-    }
+	s := strings.TrimSpace(percentStr)
 
-    parts := strings.Split(s, ".")
-    if len(parts) > 2 {
-        return 0, 0, errors.New("invalid percent format")
-    }
+	// Optional trailing '%'
+	if v, ok := strings.CutSuffix(s, "%"); ok {
+		s = strings.TrimSpace(v)
+	}
+	if s == "" {
+		return 0, 0, errors.New("percent is empty")
+	}
 
-    intPart := parts[0]
-    fracPart := ""
-    if len(parts) == 2 {
-        fracPart = parts[1]
-    }
+	// Optional leading '+', but no negatives
+	s = strings.TrimPrefix(s, "+")
+	if strings.HasPrefix(s, "-") {
+		return 0, 0, errors.New("percent must not be negative")
+	}
 
-    if intPart == "" {
-        intPart = "0"
-    }
-    for _, ch := range intPart {
-        if ch < '0' || ch > '9' {
-            return 0, 0, errors.New("invalid percent format")
-        }
-    }
-    for _, ch := range fracPart {
-        if ch < '0' || ch > '9' {
-            return 0, 0, errors.New("invalid percent format")
-        }
-    }
+	// Allow at most one decimal point
+	if strings.Count(s, ".") > 1 {
+		return 0, 0, errors.New("invalid percent format")
+	}
+	intPart, fracPart, _ := strings.Cut(s, ".")
 
-    // Remove trailing zeros in fractional part (keeps value exact, reduces denominator)
-    fracPart = strings.TrimRight(fracPart, "0")
-    decimals := len(fracPart)
-    if decimals > 7 {
-        return 0, 0, errors.New("too many decimal places; max is 7")
-    }
+	if intPart == "" {
+		intPart = "0"
+	}
 
-    digits := strings.TrimLeft(intPart+fracPart, "0")
-    if digits == "" {
-        digits = "0"
-    }
+	// digits-only validation
+	for _, ch := range intPart {
+		if ch < '0' || ch > '9' {
+			return 0, 0, errors.New("invalid percent format")
+		}
+	}
+	for _, ch := range fracPart {
+		if ch < '0' || ch > '9' {
+			return 0, 0, errors.New("invalid percent format")
+		}
+	}
 
-    val, convErr := strconv.ParseInt(digits, 10, 64)
-    if convErr != nil {
-        return 0, 0, errors.New("percent value too large")
-    }
+	// Remove trailing zeros in fractional part (exact, smaller denominator)
+	fracPart = strings.TrimRight(fracPart, "0")
+	decimals := len(fracPart)
+	if decimals > 7 {
+		return 0, 0, errors.New("too many decimal places; max is 7")
+	}
 
-    den64 := int64(100)
-    for i := 0; i < decimals; i++ {
-        den64 *= 10
-        if den64 > 1000000000 {
-            return 0, 0, errors.New("percent precision too high")
-        }
-    }
+	// Combine digits; keep at least "0"
+	digits := strings.TrimLeft(intPart+fracPart, "0")
+	if digits == "" {
+		digits = "0"
+	}
 
-    maxNum := int64(100)
-    for i := 0; i < decimals; i++ {
-        maxNum *= 10
-    }
+	val, convErr := strconv.ParseInt(digits, 10, 64)
+	if convErr != nil {
+		return 0, 0, errors.New("percent value too large")
+	}
 
-    if val < 0 {
-        return 0, 0, errors.New("percent must not be negative")
-    }
-    if val > maxNum {
-        return 0, 0, errors.New("percent must not exceed 100")
-    }
+	// scale = 100 * 10^decimals (used for both denominator and 100% bound)
+	scale := int64(100)
+	for i := 0; i < decimals; i++ {
+		scale *= 10
+		if scale > 1_000_000_000 {
+			return 0, 0, errors.New("percent precision too high")
+		}
+	}
+	den64 := scale
+	maxNum := scale
 
-    if val == 0 {
-        return 0, 1, nil // always fail
-    }
-    if val == maxNum {
-        return 1, 1, nil // always pass
-    }
+	if val > maxNum {
+		return 0, 0, errors.New("percent must not exceed 100")
+	}
 
-    return int(val), int(den64), nil
+	if val == 0 {
+		return 0, 1, nil // always fail
+	}
+	if val == maxNum {
+		return 1, 1, nil // always pass
+	}
+
+	return int(val), int(den64), nil
 }
