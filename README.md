@@ -96,11 +96,11 @@ Returns `200 OK` if the RNG is healthy, otherwise `503`.
 
 The server expects these environment variables:
 
-- `API_KEY` – required. Requests must include `X-API-KEY: <API_KEY>`.
+- `API_KEY` – requests must include `X-API-KEY: <API_KEY>` if specified.
 - `SERIAL_DEVICE_NAME` – e.g. `/dev/TrueRNG`
 - `SERIAL_BAUD_RATE` – TrueRNG baud rate (depends on device/OS)
 - `SERIAL_READ_TIMEOUT` – read timeout (milliseconds)
-- `RNG_HEALTH_INTERVAL_MS` – interval in milliseconds between background RNG health checks (default: `10000`).
+- `RNG_HEALTH_INTERVAL` – interval in milliseconds between background RNG health checks (default: `10000`).
 
 ## Running
 
