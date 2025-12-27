@@ -35,7 +35,7 @@ func (h *Handlers) RandomBytes(c *gin.Context) {
 		}
 
 		hex := fmt.Sprintf("%x", buf)
-		return hex, gin.H{"bytes_hex": hex, "size": size}, 0, ""
+		return hex, gin.H{"bytes": hex, "size": size}, 0, ""
 	})
 }
 
@@ -59,7 +59,7 @@ func (h *Handlers) RandomNumber(c *gin.Context) {
 		}
 
 		return fmt.Sprintf("%d", n),
-			gin.H{"value": n, "min": min, "max": max},
+			gin.H{"number": n, "min": min, "max": max},
 			0, ""
 	})
 }
@@ -176,7 +176,7 @@ func (h *Handlers) RandomStrings(c *gin.Context) {
 
 		s := out.String()
 		return s, gin.H{
-			"value":     s,
+			"string":    s,
 			"size":      size,
 			"lowercase": lowers,
 			"uppercase": uppers,
