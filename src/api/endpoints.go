@@ -190,7 +190,7 @@ func (h *Handlers) RandomPercent(c *gin.Context) {
 	percentStr := c.DefaultQuery("percent", "25")
 
 	h.handleRNG(c, func() (string, gin.H, int, string) {
-		num, den, err := rng.ParsePercentExact(percentStr)
+		target, den, err := rng.ParsePercentExact(percentStr)
 		if err != nil {
 			return "", nil, http.StatusBadRequest, err.Error()
 		}
@@ -201,16 +201,16 @@ func (h *Handlers) RandomPercent(c *gin.Context) {
 				"Error fetching a random number."
 		}
 
-		pass := int(roll) <= num
+		pass := int(roll) <= target
 		result := "Fail"
 		if pass {
 			result = "Pass"
 		}
 
-		text := fmt.Sprintf("Rolled %d from %d/%d\n%s", roll, num, den, result)
+		text := fmt.Sprintf("Rolled %d from %d/%d\n%s", roll, target, den, result)
 		return text, gin.H{
 			"percent": percentStr,
-			"success": num,
+			"target":  target,
 			"out_of":  den,
 			"roll":    int(roll),
 			"pass":    pass,
