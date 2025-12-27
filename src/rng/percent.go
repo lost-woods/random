@@ -67,12 +67,13 @@ func ParsePercentExact(percentStr string) (num int, den int, err error) {
 		digits = "0"
 	}
 
-	val, convErr := strconv.ParseInt(digits, 10, 64)
+	target, convErr := strconv.ParseInt(digits, 10, 64)
 	if convErr != nil {
 		return 0, 0, errors.New("percent value too large")
 	}
 
-	// scale = 100 * 10^decimals (used for both denominator and 100% bound)
+	// scale = 100 * 10^decimals
+	// (used for both denominator and 100% bound)
 	scale := int64(100)
 	for i := 0; i < decimals; i++ {
 		scale *= 10
@@ -80,19 +81,19 @@ func ParsePercentExact(percentStr string) (num int, den int, err error) {
 			return 0, 0, errors.New("percent precision too high")
 		}
 	}
-	den64 := scale
+	denominator := scale
 	maxNum := scale
 
-	if val > maxNum {
+	if target > maxNum {
 		return 0, 0, errors.New("percent must not exceed 100")
 	}
 
-	if val == 0 {
+	if target == 0 {
 		return 0, 1, nil // always fail
 	}
-	if val == maxNum {
+	if target == maxNum {
 		return 1, 1, nil // always pass
 	}
 
-	return int(val), int(den64), nil
+	return int(target), int(denominator), nil
 }
