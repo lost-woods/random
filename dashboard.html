@@ -1,0 +1,1881 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>RNG Uniformity Test Dashboard</title>
+  <style>
+    :root { --bg:#0b0f14; --card:#121a24; --muted:#9bb0c9; --text:#eaf2ff; --line:#233245; }
+    body { margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: radial-gradient(1200px 600px at 20% 0%, #132033 0%, var(--bg) 55%); color:var(--text); }
+    header { padding: 18px 18px 10px; border-bottom: 1px solid var(--line); backdrop-filter: blur(8px);
+      position: sticky; top: 0; background: rgba(11,15,20,.82); z-index: 10; }
+    h1 { margin: 0 0 6px; font-size: 18px; font-weight: 900; letter-spacing: .2px; }
+    .sub { color: var(--muted); font-size: 13px; line-height: 1.4; max-width: 1100px; }
+    main { padding: 18px; max-width: 1200px; margin: 0 auto; }
+    .grid { display:grid; grid-template-columns: 1.2fr .8fr; gap: 14px; }
+    @media (max-width: 980px){ .grid { grid-template-columns: 1fr; } }
+    .card { background: rgba(18,26,36,.92); border: 1px solid rgba(35,50,69,.9); border-radius: 16px;
+      padding: 14px; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
+    .row { display:flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .rowBetween { display:flex; gap: 10px; flex-wrap: wrap; align-items:center; justify-content: space-between; }
+    label { display:block; font-size: 12px; color: var(--muted); margin: 8px 0 6px; }
+    input, select { background: #0c121b; border: 1px solid rgba(35,50,69,.9); color: var(--text);
+      border-radius: 12px; padding: 10px 12px; outline: none; width: min(560px, 100%); }
+    input[type="number"]{ width: 190px; }
+    button { cursor:pointer; border: 1px solid rgba(35,50,69,.9); border-radius: 12px; padding: 10px 12px;
+      background: linear-gradient(180deg, #1c2a3b, #121a24); color: var(--text); font-weight: 800; }
+    button:disabled { opacity:.5; cursor:not-allowed; }
+    .pill { display:inline-flex; align-items:center; gap:8px; font-size: 12px; padding: 6px 10px; border-radius: 999px;
+      border: 1px solid rgba(35,50,69,.9); background: rgba(12,18,27,.8); color: var(--muted); }
+    .pill b { color: var(--text); }
+    .bar { height: 10px; width: 260px; background:#0c121b; border: 1px solid rgba(35,50,69,.9); border-radius: 999px; overflow:hidden; }
+    .bar > div { height: 100%; width: 0%; background: linear-gradient(90deg, #3bb2ff, #9a7bff); }
+    .tests { display:grid; grid-template-columns: 1fr; gap: 12px; }
+    .testHeader { display:flex; align-items:center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+    .testTitle { display:flex; align-items:center; gap: 10px; }
+    .badge { font-size: 12px; font-weight: 950; padding: 5px 10px; border-radius: 999px; border:1px solid rgba(35,50,69,.9); }
+    .pass { background: rgba(26,140,80,.18); color:#63f0a7; }
+    .warn { background: rgba(180,120,20,.18); color:#ffd07a; }
+    .fail { background: rgba(180,35,45,.18); color:#ff9aa6; }
+    .pending { background: rgba(90,120,160,.18); color:#b7d6ff; }
+    details { margin-top: 10px; border-top: 1px dashed rgba(35,50,69,.7); padding-top: 10px; }
+    summary { color: var(--muted); cursor:pointer; }
+    pre { white-space: pre-wrap; word-break: break-word; background: #0c121b; border: 1px solid rgba(35,50,69,.9);
+      border-radius: 12px; padding: 12px; margin: 10px 0 0; color: #d7e7ff; font-size: 12px; line-height: 1.35; }
+    canvas { width: 100%; height: 92px; border-radius: 12px; background: #0c121b; border: 1px solid rgba(35,50,69,.9); }
+    .tiny { font-size: 12px; color: var(--muted); line-height: 1.35; }
+    .hint { color: #b7d6ff; }
+    .btnSmall { padding: 7px 10px; font-size: 12px; border-radius: 10px; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+    .tabs { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+    .tab { padding: 6px 10px; border-radius: 999px; border:1px solid rgba(35,50,69,.9); background: rgba(12,18,27,.8);
+      color: var(--muted); font-size: 12px; cursor:pointer; user-select:none; }
+    .tab.active { color: var(--text); background: rgba(28,42,59,.9); }
+    .hidden { display:none !important; }
+    .kbd { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; padding:2px 6px; border-radius:8px;
+      border:1px solid rgba(35,50,69,.9); background: rgba(12,18,27,.8); color:#d7e7ff; }
+  
+.details{white-space: pre-wrap; word-break: break-word;}
+
+/* --- API key input sizing fix --- */
+.controls { flex-wrap: wrap; }
+.controls .field { flex: 1 1 240px; min-width: 220px; }
+.controls input[type="text"], 
+.controls input[type="password"] { 
+  width: 100%; 
+  max-width: 360px; 
+  box-sizing: border-box; 
+}
+
+
+/* --- Strong API key input layout fix --- */
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.controls .field {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+#apiKey,
+#apiKeyInput,
+input[name="apiKey"],
+input[placeholder="paste key here"] {
+  width: 280px !important;
+  max-width: 100% !important;
+  box-sizing: border-box;
+}
+
+
+/* --- Pretty non-overlapping controls layout (Base URL + API key + buttons) --- */
+.controls{
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px !important;
+  align-items: end !important;
+}
+.controls .field{
+  min-width: 0 !important;
+}
+.controls label{
+  display:block;
+  margin-bottom:6px;
+}
+.controls input[type="text"],
+.controls input[type="password"]{
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+.controls .buttons,
+.controls .btnRow,
+.controls .actions{
+  grid-column: 1 / -1;
+  display:flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-start;
+}
+
+
+/* --- Fine-tuned control widths (Base URL shorter than API key) --- */
+.controls{
+  grid-template-columns: minmax(180px, 260px) minmax(220px, 1fr) !important;
+}
+.controls .field.baseurl input{
+  max-width: 260px;
+}
+
+
+/* === Rebuilt controls layout (robust, no overlap) === */
+.controls{
+  display: grid !important;
+  grid-template-columns: 220px 1fr !important;
+  grid-auto-rows: auto;
+  gap: 14px !important;
+  align-items: end;
+}
+
+@media (max-width: 720px){
+  .controls{
+    grid-template-columns: 1fr !important;
+  }
+}
+
+.controls .field{
+  min-width: 0 !important;
+}
+
+.controls input[type="text"],
+.controls input[type="password"]{
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* Ensure Base URL never grows */
+.controls .field.baseurl{
+  max-width: 220px;
+}
+
+/* Buttons always on their own row */
+.controls .buttons,
+.controls .btnRow,
+.controls .actions{
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+
+/* === Rebuilt Top Controls (no overlap) === */
+.topControls{ margin-top: 10px; }
+.primaryGrid{
+  display:grid;
+  grid-template-columns: 220px 1fr;
+  gap:12px;
+  align-items:end;
+}
+.settingsGrid{
+  display:grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap:12px;
+  margin-top:12px;
+  align-items:end;
+}
+.topControls .field{ min-width:0; }
+.topControls input, .topControls select{
+  width:100%;
+  max-width:100%;
+  box-sizing:border-box;
+}
+@media (max-width: 720px){
+  .primaryGrid{ grid-template-columns: 1fr; }
+}
+
+
+/* --- Status badge (PASS/WARN/FAIL/PENDING) --- */
+.badge{ display:inline-block; padding:2px 9px; border-radius:999px; font-size:12px; font-weight:700; letter-spacing:.3px; }
+.badge.pending{ background: rgba(187,187,187,.14); color:#ddd; border:1px solid rgba(255,255,255,.14); }
+.badge.pass{ background: rgba(48,209,143,.16); color:#63f0b7; border:1px solid rgba(48,209,143,.35); }
+.badge.warn{ background: rgba(255,206,106,.16); color:#ffd07a; border:1px solid rgba(255,206,106,.35); }
+.badge.fail{ background: rgba(255,107,134,.16); color:#ff9cb0; border:1px solid rgba(255,107,134,.35); }
+
+</style>
+</head>
+<body>
+<header>
+  <h1>RNG Uniformity Test Dashboard</h1>
+  <div class="sub">
+    Single-file UI that stress-tests every endpoint and runs extra checks: multiple integer ranges, multiple percent values,
+    byte frequency + entropy + serial correlation + runs, string character + per-position bias + bigrams, and cards multi-draw duplicate checks.
+    <br/>Tip: start with <span class="kbd">Quick smoke</span>, then bump Samples to 50k–200k for stronger detection.
+  </div>
+</header>
+
+<main class="grid">
+  <section class="card">
+    <div class="rowBetween">
+      <div class="row">
+        <span class="pill">Overall: <b id="overallStatus">Not run</b></span>
+        <span class="pill">Elapsed: <b id="elapsed">0.0s</b></span>
+        <span class="pill">Requests: <b id="reqCount">0</b></span>
+      </div>
+      <div class="row">
+        <div class="bar" title="overall progress"><div id="progressFill"></div></div>
+        <span class="pill">Progress: <b id="progressPct">0%</b></span>
+      </div>
+    </div>
+
+    <div class="topControls">
+      <div class="primaryGrid">
+        <div class="field baseurl">
+          <label>Base URL</label>
+          <input id="baseUrl" value="http://random.url" />
+        </div>
+        <div class="field apikey">
+          <label>X-API-KEY</label>
+          <input id="apiKey" placeholder="paste key here" />
+        </div>
+      </div>
+
+      <div class="settingsGrid">
+        <div class="field">
+          <label>Response mode</label>
+          <select id="acceptMode">
+            <option value="text">Plain text</option>
+            <option value="json" selected>JSON (Accept: application/json)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Concurrency</label>
+          <input id="concurrency" type="number" min="1" max="64" value="16"/>
+        </div>
+        <div class="field">
+          <label>Samples per endpoint test</label>
+          <input id="samples" type="number" min="200" value="10000"/>
+        </div>
+        <div class="field">
+          <label>Strictness</label>
+          <select id="strictness">
+            <option value="normal">Normal</option>
+            <option value="strict">Strict</option>
+            <option value="lenient">Lenient</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="row" style="margin-top: 12px;">
+      <button id="runAllBtn">Run all</button>
+      <button id="stopBtn">Stop</button>
+      <button id="smokeBtn">Quick smoke (2k)</button>
+      <button id="exportJsonBtn" class="btnSmall">Export JSON</button>
+      <button id="exportCsvBtn" class="btnSmall">Export CSV</button>
+      <span class="tiny">Keyboard: <span class="kbd">r</span>=run all • <span class="kbd">s</span>=stop • <span class="kbd">e</span>=export JSON</span>
+    </div>
+
+    <div class="tiny" style="margin-top: 10px;">
+      Verdicts are heuristic. <span class="hint">PASS</span>=no strong evidence of bias,
+      <span class="hint">WARN</span>=suspicious-ish, <span class="hint">FAIL</span>=strong deviation or invalid output.
+      False alarms happen; repeat runs matter.
+    </div>
+
+    <div class="tabs" id="tabs"></div>
+  </section>
+
+  <aside class="card">
+    <div class="rowBetween">
+      <div style="font-weight: 900;">Extra tests included</div>
+      <span class="pill">QA bundle</span>
+    </div>
+    <div class="tiny" style="margin-top: 10px;">
+      <ul>
+        <li><b>/</b>: chi-square on <span class="mono">[1..6],[1..7],[1..9],[1..10],[1..49],[0..99],[1..52]</span> + adjacent correlation + runs test</li>
+        <li><b>/percent</b>: binomial tests for <span class="mono">1, 5, 12.5, 50, 95, 99</span></li>
+        <li><b>/bytes</b>: chi-square (0..255), Shannon entropy estimate, serial correlation (lag 1), monobit + runs</li>
+        <li><b>/strings</b>: per-character chi-square, per-position chi-square (detects position bias), bigram chi-square on top alphabet</li>
+        <li><b>/cards</b>: single draw distribution + multi-draw duplicate rate (cards=5,10) to infer replacement behavior</li>
+      </ul>
+      Notes: Some tests assume endpoints behave sensibly; if your API returns different shapes, switch Response mode or inspect Details.
+    </div>
+  </aside>
+
+  <section class="card" style="grid-column: 1 / -1;">
+    <div class="rowBetween" style="align-items:flex-end;">
+      <div>
+        <div style="font-weight: 900; font-size: 15px;">Tests</div>
+        <div class="tiny">Use tabs to filter. Each card has Run, chart, and exportable details.</div>
+      </div>
+      </div>
+    <div class="tests" id="tests"></div>
+  </section>
+</main>
+
+<script>
+/** ------------ Global state / export model ------------ **/
+const results = {}; // id -> result object
+let stopFlag = false;
+let reqCounter = 0;
+let totalUnits = 1;
+let doneUnits = 0;
+let startTime = 0;
+let timerHandle = null;
+
+const testsEl = document.getElementById("tests");
+const tabsEl = document.getElementById("tabs");
+const overallStatusEl = document.getElementById("overallStatus");
+const elapsedEl = document.getElementById("elapsed");
+const reqCountEl = document.getElementById("reqCount");
+const progressFill = document.getElementById("progressFill");
+const progressPct = document.getElementById("progressPct");
+
+function getCfg() {
+  const baseUrl = document.getElementById("baseUrl").value.replace(/\/+$/, "");
+  const apiKey = document.getElementById("apiKey").value.trim();
+  const acceptMode = document.getElementById("acceptMode").value;
+  const concurrency = Math.max(1, Math.min(64, Number(document.getElementById("concurrency").value || 1)));
+  const samples = Math.max(200, Number(document.getElementById("samples").value || 200));
+  const strictness = document.getElementById("strictness").value;
+  return { baseUrl, apiKey, acceptMode, concurrency, samples, strictness };
+}
+
+function nowMs(){ return performance.now(); }
+function setOverall(text) { setTextSafe(overallStatusEl, text); }
+function setProgress(done, total) {
+  doneUnits = done;
+  totalUnits = Math.max(1, total);
+  const pct = Math.floor((doneUnits / totalUnits) * 100);
+  progressFill.style.width = pct + "%";
+  progressPct.textContent = pct + "%";
+}
+function startTimer(){
+  startTime = nowMs();
+  if (timerHandle) clearInterval(timerHandle);
+  timerHandle = setInterval(() => {
+    const sec = (nowMs() - startTime)/1000;
+    setTextSafe(elapsedEl, sec.toFixed(1) + "s");
+    setTextSafe(reqCountEl, String(reqCounter));
+  }, 150);
+}
+function stopTimer(){ if (timerHandle) clearInterval(timerHandle); timerHandle = null; }
+
+function verdictClass(v) {
+  if (v === "PASS") return "pass";
+  if (v === "WARN") return "warn";
+  if (v === "FAIL") return "fail";
+  return "pending";
+}
+
+
+/** ------------ What each test means (shown in Details) ------------ **/
+const EXPLAINS = {
+  "ints-multi": `What this checks
+- Uniformity: For each range, it counts how often each integer appears and runs a chi-square goodness-of-fit test against the expected equal frequency (1/k each).
+- Independence (quick sanity): It also checks a lag-1 Pearson correlation on the 0..99 stream (adjacent values shouldn’t be correlated) and a runs test on a derived bitstream (>=50 vs <50) to detect “clumping” beyond what randomness usually produces.
+
+How to read it
+- Very small p-values mean “these counts look unlikely under perfect uniform randomness.”
+- One small p-value can happen by chance; repeated failures across runs/sample sizes is stronger evidence.`,
+  "percent-multi": `What this checks
+- For each target percent (1, 5, 12.5, 50, 95, 99), it calls /percent many times and counts passes vs fails.
+- It then runs a two-sided z-test (normal approximation to a binomial test) to see if the observed pass rate matches the target probability.
+
+How to read it
+- If the observed pass rate is consistently above/below the target and p-values are tiny, that suggests bias or a bug in thresholding.`,
+  "bytes-ext": `What this checks
+- Uniformity of bytes: Counts 0..255 and runs a chi-square goodness-of-fit test for equal probability 1/256 each.
+- Entropy: Estimates Shannon entropy (ideal is ~8.0 bits/byte).
+- Dependence: Computes lag-1 serial correlation across bytes (should be near 0).
+- Bit-level sanity: Monobit test + runs test on the least-significant bit (LSB) to catch obvious patterns.
+
+How to read it
+- “Entropy” close to 8 is good; noticeably lower suggests predictability.
+- Correlation noticeably away from 0 can indicate structure.`,
+  "strings-ext": `What this checks
+- Character uniformity: Counts each character in the output alphabet and runs chi-square against equal frequency.
+- Position bias: For each position in the string, compares that position’s character distribution to the overall distribution (detects “first char biased”, etc.).
+- Bigram sanity: For the most common characters, checks whether character pairs (bigrams) appear roughly uniformly.
+
+How to read it
+- If your generator uses a non-uniform alphabet by design, this test will WARN/FAIL even if the RNG is fine.
+- Position-bias failures are especially useful for detecting buggy encoding or modulo bias.`,
+  "cards-ext": `What this checks
+- Single-card uniformity: Draws 1 card repeatedly and checks distribution across distinct card labels (chi-square).
+- Multi-draw duplicates: Draws 5 cards repeatedly and measures duplicate rate (to infer with/without replacement behavior).
+- Full-deck draw: Draws exactly the deck size (52 or 54 with jokers) and checks for duplicates and missing cards. For a “shuffle then draw without replacement” API, duplicates should be 0 in full-deck draws.
+
+How to read it
+- If your endpoint intentionally samples *with replacement*, duplicates are expected and the dashboard will report that rather than treating it as RNG bias.`,
+  "health": `This endpoint is not tested in this dashboard.`
+};
+
+
+/** ------------ Why a test might FAIL/WARN (shown in Details) ------------ **/
+function whyThisMightFail(id, verdict, pValue, note){
+  const p = (pValue==null || Number.isNaN(Number(pValue))) ? null : Number(pValue);
+  const n = (note || "").toLowerCase();
+  const common = [];
+  common.push("Interpreting p-values:");
+  common.push("- Small p-value means the observed data would be unlikely if the generator were perfectly uniform/independent.");
+  common.push("- Because we run multiple tests, occasional small p-values can happen by chance. Repeating the test helps.");
+  common.push("");
+
+  const add = (lines)=>common.push(...lines, "");
+  if (id === "ints-multi") add([
+    "Common causes for Integers FAIL/WARN:",
+    "- Modulo bias or rounding bias when mapping random bytes to a range (especially large ranges like 1..10000).",
+    "- Off-by-one bugs (values outside [min,max] or missing endpoints).",
+    "- Non-uniform source (PRNG seeded poorly) or reuse of the same value.",
+    "- Correlation/clumping from a bad mixing step."
+  ]);
+  if (id === "percent-multi") add([
+    "Common causes for Percent FAIL/WARN:",
+    "- Thresholding bug (e.g., using <= instead of <, or wrong scale).",
+    "- Parsing/format mismatch (dashboard expects boolean-ish field; your API uses `pass`).",
+    "- Using a fixed roll range that doesn't match the requested decimal percent precisely.",
+    "- Returning debug text alongside JSON (should be fine if request_id is ignored)."
+  ]);
+  if (id === "bytes-ext") add([
+    "Common causes for Bytes FAIL/WARN:",
+    "- Using non-crypto PRNG or compressing/encoding incorrectly.",
+    "- Taking only some bits (e.g., only low bits) causing bias.",
+    "- Reusing buffers or not filling the requested size.",
+    "- Correlation from a poor whitening step."
+  ]);
+  if (id === "strings-ext") add([
+    "Common causes for Strings FAIL/WARN:",
+    "- Alphabet not uniform by design (e.g., excluding characters or weighting).",
+    "- Modulo bias when mapping bytes to characters.",
+    "- Position bias from encoding (e.g., base64 padding/structure) or bug that treats first/last char differently."
+  ]);
+  if (id === "cards-ext") add([
+    "Common causes for Cards FAIL/WARN:",
+    "- API draws with replacement (duplicates appear in multi-draw or full-deck draw).",
+    "- Card formatting inconsistencies creating extra categories (hurts uniformity test).",
+    "- Not actually shuffling; selecting suits/values separately incorrectly."
+  ]);
+
+  if (verdict === "PASS") return "Why this might fail (not triggered):\\n" + common.join("\\n");
+  return "Why this might have failed:\\n" + common.join("\\n");
+}
+
+/** ------------ Stats helpers (dashboard approximations) ------------ **/
+function clamp01(x){ return Math.max(0, Math.min(1, x)); }
+function normalCdf(z) {
+  const t = 1 / (1 + 0.2316419 * Math.abs(z));
+  const d = 0.3989423 * Math.exp(-z*z/2);
+  let p = d*t*(0.3193815 + t*(-0.3565638 + t*(1.781478 + t*(-1.821256 + t*1.330274))));
+  if (z > 0) p = 1 - p;
+  return p;
+}
+function chiSquarePValue(chi2, dof) {
+  if (dof <= 0) return 1;
+  const k = dof;
+  const z = (Math.pow(chi2 / k, 1/3) - (1 - 2/(9*k))) / Math.sqrt(2/(9*k));
+  return clamp01(1 - normalCdf(z));
+}
+function zTestTwoSided(phat, p, n){
+  const se = Math.sqrt(p*(1-p)/n);
+  const z = (phat - p) / (se || 1);
+  const p2 = 2*(1 - normalCdf(Math.abs(z)));
+  return { z, p2: clamp01(p2) };
+}
+function pickThresholds(strictness){
+  if (strictness === "strict") return { passP: 0.01, warnP: 0.001 };
+  if (strictness === "lenient") return { passP: 0.001, warnP: 0.0001 };
+  return { passP: 0.005, warnP: 0.0005 };
+}
+function verdictFromP(p, strictness){
+  const { passP, warnP } = pickThresholds(strictness);
+  if (p >= passP) return "PASS";
+  if (p >= warnP) return "WARN";
+  return "FAIL";
+}
+
+// correlation of sequences (Pearson) for integers; returns r in [-1,1]
+function pearsonCorr(xs, ys){
+  const n = Math.min(xs.length, ys.length);
+  if (n < 2) return 0;
+  let sx=0, sy=0, sxx=0, syy=0, sxy=0;
+  for (let i=0;i<n;i++){
+    const x=xs[i], y=ys[i];
+    sx += x; sy += y;
+    sxx += x*x; syy += y*y;
+    sxy += x*y;
+  }
+  const cov = sxy - (sx*sy)/n;
+  const vx  = sxx - (sx*sx)/n;
+  const vy  = syy - (sy*sy)/n;
+  const denom = Math.sqrt(Math.max(vx,0)*Math.max(vy,0)) || 1;
+  return cov/denom;
+}
+
+// Wald-Wolfowitz runs test for binary sequence (values 0/1). Returns z approx + p(two-sided)
+function runsTest(bits){
+  let n0=0,n1=0;
+  for (const b of bits){ if (b) n1++; else n0++; }
+  const n = n0+n1;
+  if (n < 2 || n0===0 || n1===0) return { z: 0, p2: 1, runs: 1, n0, n1 };
+  let runs=1;
+  for (let i=1;i<n;i++) if (bits[i] !== bits[i-1]) runs++;
+  const mu = (2*n0*n1)/n + 1;
+  const varR = (2*n0*n1*(2*n0*n1 - n)) / (n*n*(n-1));
+  const z = (runs - mu) / (Math.sqrt(varR) || 1);
+  const p2 = 2*(1 - normalCdf(Math.abs(z)));
+  return { z, p2: clamp01(p2), runs, n0, n1 };
+}
+
+// Shannon entropy estimate for byte counts
+function shannonEntropy(counts){
+  const n = counts.reduce((a,b)=>a+b,0) || 1;
+  let H = 0;
+  for (const c of counts){
+    if (!c) continue;
+    const p = c/n;
+    H -= p * Math.log2(p);
+  }
+  return H; // bits per symbol
+}
+
+/** ------------ Networking + parsing ------------ **/
+async function fetchOne(path) {
+  const { baseUrl, apiKey, acceptMode } = getCfg();
+  const headers = {};
+  if (apiKey) headers["X-API-KEY"] = apiKey;
+  if (acceptMode === "json") headers["Accept"] = "application/json";
+  reqCounter++;
+  const res = await fetch(baseUrl + path, { headers });
+  if (!res.ok) throw new Error(`HTTP ${res.status} for ${path}`);
+  const text = await res.text();
+  return { text, contentType: res.headers.get("content-type") || "" };
+}
+function parseValue(rawText, acceptMode, preferredKey) {
+  if (acceptMode === "json") {
+    try {
+      const obj = JSON.parse(rawText);
+      if (preferredKey && obj[preferredKey] !== undefined) return obj[preferredKey];
+      for (const k of Object.keys(obj)) if (k !== "request_id") return obj[k];
+    } catch (_) {}
+  }
+  const lines = rawText.split(/\\r?\\n/).map(s=>s.trim()).filter(Boolean);
+  for (const ln of lines) {
+    const t = stripRequestIdAndPrefixes(ln);
+    if (!t) continue;
+    return t;
+  }
+  return lines[0] || "";
+}
+
+// Robust parsing for /cards responses (JSON or text), using the FULL response body (not parseValue).
+function parseCardsFromResponse(rawText, acceptMode, cardsN){
+  // 1) JSON mode: try parse the full payload
+  if (acceptMode === "json") {
+    try {
+      const obj = JSON.parse(rawText);
+      // common shapes: {cards:[...], request_id:"..."}, or {value:[...]}
+      if (obj && Array.isArray(obj.cards)) return obj.cards.map(x => stripRequestIdAndPrefixes(x)).filter(Boolean);
+      if (obj && typeof obj.cards === "string") return tokenizeCardsText(obj.cards, cardsN);
+      if (obj && Array.isArray(obj.drawn)) {
+        // common shape: { drawn: [ {value:"Ace", suit:"Spades"}, ... ] }
+        const arr = obj.drawn.map(it => {
+          if (it == null) return "";
+          if (typeof it === "string" || typeof it === "number") return stripRequestIdAndPrefixes(it);
+          if (typeof it === "object") {
+            const v = it.value ?? it.rank ?? it.card ?? "";
+            const s = it.suit ?? it.s ?? "";
+            const vv = stripRequestIdAndPrefixes(v);
+            const ss = stripRequestIdAndPrefixes(s);
+            if (vv && ss) {
+              if (String(vv).toLowerCase() === 'joker') return `${ss} Joker`;
+              return `${vv} of ${ss}`;
+            }
+            return stripRequestIdAndPrefixes(vv || ss || "");
+          }
+          return "";
+        }).map(x => String(x).trim()).filter(Boolean);
+        if (arr.length) return arr;
+      }
+
+      if (obj && Array.isArray(obj.value)) return obj.value.map(x => stripRequestIdAndPrefixes(x)).filter(Boolean);
+      // sometimes the response might just be an array
+      if (Array.isArray(obj)) return obj.map(x => stripRequestIdAndPrefixes(x)).filter(Boolean);
+      // fallthrough: try best-effort first non-request_id field
+      if (obj && typeof obj === "object") {
+        // scan for an array of strings anywhere
+        const stack = [obj];
+        while (stack.length){
+          const cur = stack.pop();
+          if (!cur) continue;
+          if (Array.isArray(cur)) {
+            if (cur.length && cur.every(v => typeof v === 'string' || typeof v === 'number')) {
+              const arr = cur.map(x => stripRequestIdAndPrefixes(x)).filter(Boolean);
+              if (arr.length) return arr;
+            }
+            for (const it of cur) stack.push(it);
+            continue;
+          }
+          if (typeof cur === 'object') {
+            for (const k of Object.keys(cur)) {
+              if (k === 'request_id') continue;
+              stack.push(cur[k]);
+            }
+          }
+        }
+
+        for (const k of Object.keys(obj)) {
+          if (k === "request_id") continue;
+          const v = obj[k];
+          if (Array.isArray(v)) return v.map(x => String(x).trim()).filter(Boolean);
+          if (typeof v === "string") return tokenizeCardsText(v, cardsN);
+        }
+      }
+    } catch (_) {
+      // fall back to text parsing below
+    }
+  }
+
+  // 2) Text mode (or JSON parse failed): strip request_id lines and tokenize
+  const body = stripRequestIdLines(rawText);
+  if (!body) return [];
+  // If the body itself looks like JSON array/string, try parse
+  if (body[0] === "[" || body[0] === "{") {
+    try {
+      const obj = JSON.parse(body);
+      if (Array.isArray(obj)) return obj.map(x => stripRequestIdAndPrefixes(x)).filter(Boolean);
+      if (obj && Array.isArray(obj.cards)) return obj.cards.map(x => stripRequestIdAndPrefixes(x)).filter(Boolean);
+      if (obj && typeof obj.cards === "string") return tokenizeCardsText(obj.cards, cardsN);
+    } catch (_) {}
+  }
+  return tokenizeCardsText(body, cardsN);
+}
+
+function tokenizeCardsText(text, cardsN){
+  const s = String(text || "").trim();
+  if (!s) return [];
+  // Common separators: newlines, commas, semicolons, pipes, multiple spaces
+  let parts = s.split(/\r?\n/).flatMap(line => line.split(/[;,|]+/)).flatMap(x => x.split(/\s{2,}/));
+  // If it's a single-line "A B C" format, try splitting on single spaces if we expect multiple cards
+  if (cardsN > 1 && parts.length < cardsN && /\s/.test(s) && !/[;,|]/.test(s)) {
+    parts = s.split(/\s+/);
+  }
+  // Trim and remove empties
+  parts = parts.map(x => stripRequestIdAndPrefixes(x)).filter(Boolean);
+
+  // If there are still too many tokens and the original looked like "AS KD QH ..." (space-separated short codes),
+  // keep as-is. If it looked like sentence-like "Ace of Spades", avoid splitting inside names by using newline/comma only.
+  if (cardsN > 1 && parts.length > cardsN && !/[;,|]/.test(s) && s.includes("\n") === false) {
+    // Heuristic: if tokens include "of" then likely "Ace of Spades" style; prefer splitting on commas only
+    if (/\bof\b/i.test(s)) {
+      parts = s.split(/\s*,\s*/).map(x => x.trim()).filter(Boolean);
+    }
+  }
+
+  // For single-card mode, return just the first non-empty token/line
+  if (cardsN === 1) return parts.slice(0,1);
+
+  return parts;
+}
+
+// Remove request_id noise and common "key:" prefixes from a line.
+function stripRequestIdAndPrefixes(s){
+  let x = String(s || "").trim();
+  if (!x) return "";
+  // Remove inline request_id fragments like "request_id: abc" anywhere
+  x = x.replace(/request_id\s*:\s*[A-Za-z0-9_-]+/ig, "").trim();
+  // If line is literally request_id, drop it
+  if (/^request_id\b/i.test(x)) return "";
+  // Remove common prefixes
+  x = x.replace(/^(value|result|cards|bytes)\s*:\s*/i, "").trim();
+  return x;
+}
+
+// For text responses: remove any lines that are request_id-ish, then rejoin.
+function stripRequestIdLines(rawText){
+  const lines = String(rawText || "").split(/\r?\n/);
+  const kept = [];
+  for (const ln of lines){
+    const t = stripRequestIdAndPrefixes(ln);
+    if (!t) continue;
+    kept.push(t);
+  }
+  return kept.join("\n").trim();
+}
+
+// Use for anything shown in Details tabs: removes request_id noise (lines + inline) and trims.
+function sanitizeForDetails(rawText){
+  // Remove request_id noise and render any literal \n sequences as real line breaks.
+  const s = stripRequestIdLines(String(rawText || "").replace(/request_id\s*:\s*[A-Za-z0-9_-]+/ig, ""));
+  return String(s || "").replace(/\\n/g, "\n").replace(/\\r/g, "");
+}
+
+function setTextSafe(el, text){
+  if (!el) return;
+  el.textContent = text;
+}
+function setHtmlSafe(el, html){
+  if (!el) return;
+  el.innerHTML = html;
+}
+function getEl(id){
+  return document.getElementById(id);
+}
+
+
+// Robust parsing for /strings responses (JSON or text), ignoring request_id.
+function parseStringFromResponse(rawText, acceptMode){
+  if (acceptMode === "json") {
+    try {
+      const obj = JSON.parse(rawText);
+      if (obj == null) return "";
+      if (typeof obj === "string") return stripRequestIdAndPrefixes(obj);
+      // common shapes: {value:"..."}, {string:"..."}, {result:"..."}, or raw string
+      for (const key of ["value","string","result","data"]) {
+        if (obj[key] != null) return stripRequestIdAndPrefixes(obj[key]);
+      }
+      // first non-request_id field
+      if (typeof obj === "object") {
+        for (const k of Object.keys(obj)) {
+          if (k === "request_id") continue;
+          const v = obj[k];
+          if (typeof v === "string") return stripRequestIdAndPrefixes(v);
+        }
+      }
+    } catch (_) {}
+  }
+  const body = stripRequestIdLines(rawText);
+  if (!body) return "";
+  // take first line only for string endpoint
+  const first = body.split(/\r?\n/).map(s=>s.trim()).filter(Boolean)[0] || "";
+  const cleaned = stripRequestIdAndPrefixes(first);
+  // remove wrapping quotes if present
+  if ((cleaned.startsWith('"') && cleaned.endsWith('"')) || (cleaned.startsWith("'") && cleaned.endsWith("'"))) {
+    return cleaned.slice(1, -1);
+  }
+  return cleaned;
+}
+
+// Robust parsing for /percent responses: returns true/false or null if unparseable.
+function parseBoolFromResponse(rawText, acceptMode){
+  const toBool = (x) => {
+    const s = stripRequestIdAndPrefixes(x).trim().toLowerCase();
+    if (!s) return null;
+    if (s === "true" || s === "1" || s === "yes" || s === "pass") return true;
+    if (s === "false" || s === "0" || s === "no" || s === "fail") return false;
+    return null;
+  };
+
+  const bodyText = stripRequestIdLines(rawText);
+
+  // JSON preferred
+  if (acceptMode === "json") {
+    try {
+      const obj = JSON.parse(rawText);
+
+      // direct primitives
+      if (typeof obj === "boolean") return obj;
+      if (typeof obj === "number") return obj === 1 ? true : (obj === 0 ? false : null);
+      if (typeof obj === "string") return toBool(obj);
+
+      if (obj && typeof obj === "object") {
+        // Common keys first (including your server's 'pass')
+        for (const key of ["pass","result","value","ok","outcome","success_bool"]) {
+          if (obj[key] !== undefined) {
+            const v = obj[key];
+            if (typeof v === "boolean") return v;
+            if (typeof v === "number") return v === 1 ? true : (v === 0 ? false : null);
+            if (typeof v === "string") {
+              const b = toBool(v);
+              if (b !== null) return b;
+            }
+          }
+        }
+
+        // Derive from fields if present: {roll, success, out_of}
+        // Interpretation: 'success' = threshold count; pass if roll < success (or <=, but server provides 'pass' anyway)
+        if (typeof obj.roll === "number" && typeof obj.success === "number") {
+          // Prefer strict "<" (common for [0..out_of-1] style); if ambiguous, still yields a boolean.
+          return obj.roll < obj.success;
+        }
+
+        // Fallback deep scan for boolean-ish values
+        const stack = [obj];
+        while (stack.length){
+          const cur = stack.pop();
+          if (cur == null) continue;
+          if (typeof cur === "boolean") return cur;
+          if (typeof cur === "number") {
+            const b = cur === 1 ? true : (cur === 0 ? false : null);
+            if (b !== null) return b;
+          }
+          if (typeof cur === "string") {
+            const b = toBool(cur);
+            if (b !== null) return b;
+          }
+          if (Array.isArray(cur)) { for (const it of cur) stack.push(it); continue; }
+          if (typeof cur === "object") {
+            for (const k of Object.keys(cur)) {
+              if (k === "request_id") continue;
+              stack.push(cur[k]);
+            }
+          }
+        }
+      }
+    } catch (_) {
+      // fall back to text
+    }
+  }
+
+  // Text fallback
+  if (bodyText) {
+    const m = bodyText.match(/\b(true|false|yes|no|pass|fail|0|1)\b/i);
+    if (m) return toBool(m[1]);
+    const first = bodyText.split(/\r?\n/).map(s=>s.trim()).filter(Boolean)[0] || "";
+    return toBool(first);
+  }
+  return null;
+}
+async function runWithPool(n, workerFn, onTick) {
+  const { concurrency } = getCfg();
+  let i = 0;
+  const workers = Array.from({ length: concurrency }, async () => {
+    while (!stopFlag) {
+      const idx = i++;
+      if (idx >= n) return;
+      await workerFn(idx);
+      if (onTick && (idx % 120 === 0)) onTick(idx+1);
+    }
+  });
+  await Promise.allSettled(workers);
+}
+
+/** ------------ Charts ------------ **/
+function drawHistogram(canvas, counts, opts={}) {
+  const ctx = canvas.getContext("2d");
+  const w = canvas.width = canvas.clientWidth * devicePixelRatio;
+  const h = canvas.height = canvas.clientHeight * devicePixelRatio;
+  ctx.clearRect(0,0,w,h);
+
+  // grid
+  ctx.globalAlpha = 0.25;
+  ctx.strokeStyle = "#233245";
+  for (let i=1;i<=3;i++){
+    const y = (h*i)/4;
+    ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+
+  if (!counts || counts.length === 0) return;
+
+  const maxC = Math.max(...counts, 1);
+  const n = counts.length;
+  const pad = 10 * devicePixelRatio;
+  const barW = Math.max(1, (w - pad*2) / n);
+
+  ctx.fillStyle = "#3bb2ff";
+  for (let i=0;i<n;i++){
+    const val = counts[i];
+    const bh = (val / maxC) * (h - pad*2);
+    const x = pad + i*barW;
+    const y = h - pad - bh;
+    ctx.fillRect(x, y, Math.max(1, barW*0.92), bh);
+  }
+
+  {
+    // Always draw a reference line. If expected is not provided, use the average count.
+    const exp = (opts.expected != null) ? opts.expected : (counts.reduce((a,b)=>a+b,0) / counts.length);
+    const y = h - pad - (exp / maxC) * (h - pad*2);
+    ctx.strokeStyle = "#ffd07a";
+    ctx.globalAlpha = 0.85;
+    ctx.setLineDash([6 * devicePixelRatio, 4 * devicePixelRatio]);
+    ctx.beginPath(); ctx.moveTo(pad, y); ctx.lineTo(w-pad, y); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.globalAlpha = 1;
+  }
+}
+
+/** ------------ UI cards + tabs ------------ **/
+function makeTab(name){
+  const el = document.createElement("div");
+  el.className = "tab";
+  el.textContent = name;
+  el.onclick = () => setActiveTab(name);
+  tabsEl.appendChild(el);
+  return el;
+}
+
+let activeTab = "All";
+function setActiveTab(name){
+  activeTab = name;
+  for (const t of tabsEl.querySelectorAll(".tab")){
+    t.classList.toggle("active", t.textContent === name);
+  }
+  for (const card of testsEl.querySelectorAll("[data-group]")){
+    const g = card.getAttribute("data-group");
+    card.classList.toggle("hidden", !(name === "All" || g === name));
+  }
+}
+
+function makeTestCard(id, group, title, subtitle){
+  const el = document.createElement("div");
+  el.className = "card";
+  el.setAttribute("data-group", group);
+  el.innerHTML = `
+    <div class="testHeader">
+      <div class="testTitle">
+        
+        <div>
+          <div style="display:flex; align-items:baseline; gap:8px; flex-wrap:wrap;">
+          <span class="badge pending" id="${id}-badge">PENDING</span>
+          <div>
+            <div style="font-weight:900">${title}</div>
+</div>
+        </div>
+        </div>
+      </div>
+      <div class="row">
+        <button class="btnSmall" id="${id}-runBtn">Run</button>
+        <button class="btnSmall" id="${id}-repeatBtn" title="Run this test multiple times and summarize">Repeat ×3</button>
+        <span class="pill" id="${id}-meta">—</span>
+      </div>
+    </div>
+
+    <div class="row" style="margin-top:10px;">
+      <div class="bar" style="width:320px;"><div id="${id}-bar"></div></div>
+      <span class="pill">p-value: <b id="${id}-p">—</b></span>
+      <span class="pill">notes: <b id="${id}-note">—</b></span>
+    </div>
+
+    <div style="margin-top:10px;">
+      <canvas id="${id}-chart"></canvas>
+      <div class="tiny" style="margin-top:6px;">
+        <span class="mono">blue</span>=observed • <span class="mono" style="color:#ffd07a">yellow line</span>=expected (when applicable)
+      </div>
+    </div>
+
+    <details>
+      <summary>Details</summary>
+      <pre id="${id}-details">No details yet.</pre>
+    </details>
+  `;
+  testsEl.appendChild(el);
+  return el;
+}
+
+function updateTestUI(id, { verdict="PENDING", pct=0, pText="—", pValueRaw=null, note="—", meta="—", details="", chartCounts=null, chartExpected=null }){
+  const badge = document.getElementById(`${id}-badge`);
+  if (badge){
+    badge.textContent = verdict;
+    badge.className = `badge ${verdictClass(verdict)}`;
+  }
+
+  const bar = document.getElementById(`${id}-bar`);
+  if (bar){
+    bar.style.width = Math.max(0, Math.min(100, pct)) + "%";
+    bar.style.background = verdict === "PASS"
+      ? "linear-gradient(90deg, #30d18f, #3bb2ff)"
+      : verdict === "WARN"
+        ? "linear-gradient(90deg, #ffce6a, #9a7bff)"
+        : verdict === "FAIL"
+          ? "linear-gradient(90deg, #ff6b86, #ffce6a)"
+          : "linear-gradient(90deg, #3bb2ff, #9a7bff)";
+  }
+
+  setTextSafe(getEl(`${id}-p`), pText);
+  setTextSafe(getEl(`${id}-note`), note);
+  setHtmlSafe(getEl(`${id}-meta`), meta);
+  if (details) {
+    const expl = EXPLAINS[id] ? (EXPLAINS[id] + "\n\n") : "";
+    const why  = whyThisMightFail(id, verdict, pValueRaw, note);
+    setTextSafe(getEl(`${id}-details`), sanitizeForDetails(
+    "=== What this test checks ===\n" +
+    (EXPLAINS[id] ? (EXPLAINS[id] + "\n") : "This test checks whether results look uniform (no obvious bias) and independent.\n") +
+    "\n=== How to read the chart ===\n" +
+    "Bars = how often each bucket occurred.\n" +
+    "Dashed yellow line = expected count per bucket (or the average if expected isn't known).\n" +
+    "Good = bars are roughly the same height (flat). Bad = big spikes/dips.\n" +
+    "\n=== Results ===\n" +
+    ("" + expl + why + "\n" + details)
+  ));
+  }
+
+  if (chartCounts) {
+    const canvas = document.getElementById(`${id}-chart`);
+    drawHistogram(canvas, chartCounts, { expected: chartExpected });
+  }
+}
+
+function storeResult(id, obj) {
+  if (obj && obj.details) obj.details = sanitizeForDetails(obj.details);
+  if (obj && obj.details) obj.details = sanitizeForDetails(obj.details);
+  results[id] = { ...obj, timestamp: new Date().toISOString() };
+}
+
+/** ------------ Test helpers ------------ **/
+function computeOverall(){
+  const verdicts = Object.values(results).map(r => r.verdict).filter(Boolean);
+  if (verdicts.length === 0) return "Not run";
+  if (verdicts.includes("FAIL")) return "FAIL";
+  if (verdicts.includes("WARN")) return "WARN";
+  if (verdicts.every(v => v === "PASS")) return "PASS";
+  return "Done";
+}
+
+function download(filename, text, mime="application/octet-stream") {
+  const blob = new Blob([text], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 2500);
+}
+function csvEscape(s){
+  const x = String(s ?? "");
+  if (/[,"\\n]/.test(x)) return `"${x.replace(/"/g,'""')}"`;
+  return x;
+}
+
+/** ------------ Endpoint tests ------------ **/
+
+
+// 2) / integers: multi-ranges + correlation + runs
+async function testIntegersMulti() {
+  const id = "ints-multi";
+  const { samples, acceptMode, strictness } = getCfg();
+  const ranges = [
+    { min: 1, max: 6, name:"1..6" },
+    { min: 1, max: 7, name:"1..7" },
+    { min: 1, max: 9, name:"1..9" },
+    { min: 1, max: 10, name:"1..10" },
+    { min: 1, max: 49, name:"1..49" },
+    { min: 0, max: 99, name:"0..99" },
+    { min: 1, max: 52, name:"1..52" },
+  ];
+
+  updateTestUI(id, { verdict:"PENDING", pct:0, note:`Sampling ${samples} per range…`, meta:`GET <b>/</b> multiple ranges`, chartCounts:new Array(ranges.length).fill(0), chartExpected:null });
+
+  const perRange = [];
+  let bad = 0;
+
+  // For correlation/runs, take one mid-range stream (0..99) for cheap detection
+  const stream = [];
+
+  for (let ri=0; ri<ranges.length && !stopFlag; ri++){
+    const {min,max,name} = ranges[ri];
+    const k = (max - min + 1);
+    const counts = new Array(k).fill(0);
+
+    await runWithPool(samples, async () => {
+      const r = await fetchOne(`/?min=${min}&max=${max}`);
+      const v = parseInt(parseValue(r.text, acceptMode, "number"), 10);
+      if (!Number.isInteger(v) || v < min || v > max) { bad++; return; }
+      counts[v - min]++;
+      if (min===0 && max===99) stream.push(v);
+    }, (done) => {
+      const prog = ((ri*samples)+done) / (ranges.length*samples) * 100;
+      updateTestUI(id, { verdict:"PENDING", pct:prog, note:`Range ${name}… (${done}/${samples})`, chartCounts: perRange.map(x=>x.pValue||0).concat(new Array(ranges.length - perRange.length).fill(0)), chartExpected:null });
+    });
+
+    const expected = samples / k;
+    let chi2 = 0;
+    for (const c of counts) chi2 += (c - expected) * (c - expected) / expected;
+    const p = chiSquarePValue(chi2, k - 1);
+    const verdict = bad > 0 ? "FAIL" : verdictFromP(p, strictness);
+
+    // deviation summary
+    const devs = counts.map((c, idx) => ({ value: idx+min, c, deltaPct: 100*(c-expected)/expected }));
+    devs.sort((a,b) => Math.abs(b.deltaPct) - Math.abs(a.deltaPct));
+    const top = devs.slice(0, 5);
+
+    perRange.push({
+      name, min, max, buckets:k, expected,
+      chi2, pValue:p, verdict,
+      topDeviations: top
+    });
+  }
+
+  // correlation (lag1) on 0..99 stream
+  let corr = 0;
+  let runs = { z:0, p2:1, runs:0, n0:0, n1:0 };
+  if (stream.length >= 1000) {
+    const xs = stream.slice(0, -1);
+    const ys = stream.slice(1);
+    corr = pearsonCorr(xs, ys);
+    // convert to bits by thresholding median-ish (>=50)
+    const bits = stream.map(v => v >= 50 ? 1 : 0);
+    runs = runsTest(bits);
+  }
+
+  // overall verdict: worst of subtests
+  let overall = "PASS";
+  const worst = (a,b) => (a==="FAIL"||b==="FAIL") ? "FAIL" : ((a==="WARN"||b==="WARN") ? "WARN" : "PASS");
+  for (const r of perRange) overall = worst(overall, r.verdict);
+  if (bad>0) overall = "FAIL";
+
+  // extra signals: correlation magnitude > ~0.03 with large n => suspicious
+  const corrNote = (Math.abs(corr) > 0.03 && stream.length >= 20000) ? "WARN" : "PASS";
+  overall = worst(overall, corrNote);
+  const runsVerd = verdictFromP(runs.p2, strictness);
+  overall = worst(overall, runsVerd);
+
+  const details =
+`Samples per range: ${samples}
+Invalid outputs: ${bad}
+
+Per-range chi-square results:
+${perRange.map(r => `- ${r.name}: p=${r.pValue.toFixed(6)} verdict=${r.verdict}  top: ${r.topDeviations.map(t=>`${t.value}(${t.deltaPct.toFixed(2)}%)`).join(", ")}`).join("\\n")}
+
+Stream checks on range 0..99:
+- Lag-1 Pearson correlation: r=${corr.toFixed(5)}  (heuristic: |r|>0.03 with large N can be suspicious)
+- Runs test on bitstream (>=50): z=${runs.z.toFixed(3)} p=${runs.p2.toFixed(6)} runs=${runs.runs}`;
+
+  updateTestUI(id, {
+    verdict: overall,
+    pct: 100,
+    pText: `min=${Math.min(...perRange.map(r=>r.pValue)).toFixed(6)}`, pValueRaw: Math.min(...perRange.map(r=>r.pValue)),
+    note: bad ? `Invalid outputs: ${bad}` : `Worst verdict: ${overall}`,
+    meta: `Ranges: <b>${perRange.length}</b> • Stream: <b>${stream.length}</b>`,
+    details,
+    chartCounts: perRange.map(r => Math.max(0, Math.min(1, r.pValue))) , // p-values as bars [0..1]
+    chartExpected: null
+  });
+
+  storeResult(id, {
+    id, group:"Integers", verdict: overall, pValue: Math.min(...perRange.map(r=>r.pValue)),
+    samplesPerRange: samples, endpoint: "/ (multiple ranges)",
+    notes: bad ? `invalid=${bad}` : "ok",
+    details,
+    perRange, streamCorr: corr, runs
+  });
+
+  return overall;
+}
+
+// 3) /percent: multi-values
+async function testPercentMulti() {
+  const id = "percent-multi";
+  const { samples, acceptMode, strictness } = getCfg();
+  const targets = [1, 5, 12.5, 50, 95, 99];
+  const per = [];
+  let bad = 0;
+
+  updateTestUI(id, { verdict:"PENDING", pct:0, note:`Sampling ${samples} per percent…`, meta:`GET <b>/percent</b> multiple values`, chartCounts:new Array(targets.length).fill(0), chartExpected:null });
+
+  for (let ti=0; ti<targets.length && !stopFlag; ti++){
+    const target = targets[ti];
+    let trues=0,falses=0;
+
+    await runWithPool(samples, async () => {
+      const r = await fetchOne(`/percent?percent=${encodeURIComponent(target)}`);
+      const b = parseBoolFromResponse(r.text, acceptMode);
+      if (b === null) { bad++; return; }
+      if (b) trues++; else falses++;
+    }, (done) => {
+      const prog = ((ti*samples)+done) / (targets.length*samples) * 100;
+      updateTestUI(id, { verdict:"PENDING", pct:prog, note:`Percent ${target}%… (${done}/${samples})`, chartCounts: per.map(x=>Math.max(0,Math.min(1,x.pValue))).concat(new Array(targets.length - per.length).fill(0)), chartExpected:null });
+    });
+
+    const n = trues + falses;
+    const p0 = target/100;
+    const phat = n ? trues/n : 0;
+    const { z, p2 } = zTestTwoSided(phat, p0, Math.max(1,n));
+    const verdict = bad > 0 ? "FAIL" : verdictFromP(p2, strictness);
+
+    per.push({ target, trues, falses, n, phat, z, pValue:p2, verdict });
+  }
+
+  let overall="PASS";
+  const worst = (a,b) => (a==="FAIL"||b==="FAIL") ? "FAIL" : ((a==="WARN"||b==="WARN") ? "WARN" : "PASS");
+  for (const r of per) overall = worst(overall, r.verdict);
+  if (bad>0) overall="FAIL";
+
+  const details =
+`Samples per target: ${samples}
+Invalid outputs: ${bad}
+
+${per.map(r => {
+  const exp = samples*(r.target/100);
+  return `- ${r.target}%: true=${r.trues} false=${r.falses} (exp≈${exp.toFixed(1)})  phat=${(100*r.phat).toFixed(3)}%  z=${r.z.toFixed(3)}  p=${r.pValue.toFixed(6)} verdict=${r.verdict}`;
+}).join("\\n")}`;
+
+  updateTestUI(id, {
+    verdict: overall,
+    pct:100,
+    pText: `${Math.min(...per.map(r=>r.pValue)).toFixed(6)}`, pValueRaw: Math.min(...per.map(r=>r.pValue)),
+    note: bad ? `Invalid outputs: ${bad}` : `Worst verdict: ${overall}`,
+    meta: `Targets: <b>${per.length}</b>`,
+    details,
+    chartCounts: per.map(r => Math.max(0, Math.min(1, r.pValue))),
+    chartExpected: null
+  });
+
+  storeResult(id, { id, group:"Percent", verdict: overall, pValue: Math.min(...per.map(r=>r.pValue)), samplesPerTarget:samples,
+    endpoint:"/percent (multiple)", notes: bad ? `invalid=${bad}` : "ok", details, perTarget: per });
+
+  return overall;
+}
+
+// 4) /bytes: frequency + entropy + serial correlation + monobit + runs
+async function testBytesExtended() {
+  const id = "bytes-ext";
+  const { samples, acceptMode, strictness } = getCfg();
+
+  // We'll request 32 bytes per request to reduce overhead
+  const bytesPerReq = 32;
+  const reqs = Math.ceil(samples / bytesPerReq);
+  const counts = new Array(256).fill(0);
+  let bad = 0;
+
+  // for serial correlation compute on flattened stream
+  const stream = [];
+
+  updateTestUI(id, { verdict:"PENDING", pct:0, note:`Sampling ~${samples} bytes (${reqs} reqs)…`, meta:`GET <b>/bytes?size=${bytesPerReq}</b>`, chartCounts:counts, chartExpected:samples/256 });
+
+  await runWithPool(reqs, async () => {
+    const r = await fetchOne(`/bytes?size=${bytesPerReq}`);
+    let v = parseValue(r.text, acceptMode, "bytes");
+    v = String(v).trim().replace(/^0x/i, "").replace(/\\s+/g,"");
+    // expect hex string length 2*bytesPerReq
+    if (v.length < 2*bytesPerReq) { bad++; return; }
+    for (let i=0;i<2*bytesPerReq;i+=2){
+      const b = parseInt(v.slice(i,i+2), 16);
+      if (!Number.isInteger(b) || b<0 || b>255) { bad++; return; }
+      counts[b]++;
+      stream.push(b);
+    }
+  }, (done) => {
+    const prog = (done/reqs)*100;
+    updateTestUI(id, { verdict:"PENDING", pct:prog, note:`Sampling… (${done}/${reqs} reqs)`, chartCounts:counts, chartExpected:(done*bytesPerReq)/256 });
+  });
+
+  const n = stream.length || 1;
+  const expected = n / 256;
+
+  // chi-square
+  let chi2=0;
+  for (const c of counts) chi2 += (c - expected) * (c - expected) / expected;
+  const p = chiSquarePValue(chi2, 255);
+  let verdict = bad>0 ? "FAIL" : verdictFromP(p, strictness);
+
+  // entropy
+  const H = shannonEntropy(counts);
+
+  // serial correlation lag1 (bytes)
+  let corr=0;
+  if (stream.length >= 2000) {
+    const xs = stream.slice(0,-1);
+    const ys = stream.slice(1);
+    corr = pearsonCorr(xs, ys);
+    // if large N and |corr| too high => warn
+    if (stream.length >= 50000 && Math.abs(corr) > 0.01) {
+      verdict = (verdict==="FAIL") ? "FAIL" : "WARN";
+    }
+  }
+
+  // monobit on LSB
+  const bits = stream.map(b => (b & 1) ? 1 : 0);
+  const ones = bits.reduce((a,b)=>a+b,0);
+  const phat = ones / (bits.length || 1);
+  const mb = zTestTwoSided(phat, 0.5, Math.max(1,bits.length));
+  const mbVerd = verdictFromP(mb.p2, strictness);
+  // combine with worst
+  const worst = (a,b) => (a==="FAIL"||b==="FAIL") ? "FAIL" : ((a==="WARN"||b==="WARN") ? "WARN" : "PASS");
+  verdict = worst(verdict, mbVerd);
+
+  // runs test on LSB bits
+  const rt = runsTest(bits);
+  const rtVerd = verdictFromP(rt.p2, strictness);
+  verdict = worst(verdict, rtVerd);
+
+  // top deviations
+  const devs = counts.map((c, idx) => ({ b: idx, c, deltaPct: 100*(c-expected)/expected }));
+  devs.sort((a,b) => Math.abs(b.deltaPct) - Math.abs(a.deltaPct));
+  const top = devs.slice(0, 12);
+
+  const details =
+`Total bytes sampled: ${n} (target ~${samples})
+Requests: ${reqs} (size=${bytesPerReq})
+Invalid outputs: ${bad}
+
+Byte frequency chi-square:
+- chi2=${chi2.toFixed(2)} dof=255
+- p=${p.toFixed(6)} verdict=${verdictFromP(p, strictness)}
+
+Entropy estimate:
+- H=${H.toFixed(4)} bits/byte (ideal ~8.0000)
+
+Serial correlation (lag 1):
+- r=${corr.toFixed(5)} (heuristic: |r|>0.01 with large N is suspicious)
+
+Monobit (LSB):
+- ones=${ones} totalBits=${bits.length} phat=${(100*phat).toFixed(3)}%
+- z=${mb.z.toFixed(3)} p=${mb.p2.toFixed(6)} verdict=${mbVerd}
+
+Runs test (LSB):
+- runs=${rt.runs} z=${rt.z.toFixed(3)} p=${rt.p2.toFixed(6)} verdict=${rtVerd}
+
+Largest byte deviations:
+${top.map(x => `${x.b.toString(16).padStart(2,"0").toUpperCase()}: ${x.c} (${x.deltaPct.toFixed(2)}%)`).join("\\n")}`;
+
+  updateTestUI(id, {
+    verdict,
+    pct:100,
+    pText:p.toFixed(6), pValueRaw:p,
+    note: bad ? `Invalid outputs: ${bad}` : `H=${H.toFixed(3)} r=${corr.toFixed(4)}`,
+    meta: `Bytes: <b>${n}</b> • H: <b>${H.toFixed(3)}</b>`,
+    details,
+    chartCounts: counts,
+    chartExpected: expected
+  });
+
+  storeResult(id, { id, group:"Bytes", verdict, pValue:p, samples:n, endpoint:`/bytes?size=${bytesPerReq}`, notes: bad ? `invalid=${bad}`:"ok",
+    details, entropy:H, serialCorr:corr, monobit:mb, runs:rt, topDeviations:top });
+
+  return verdict;
+}
+
+// 5) /strings: char freq + per-position + bigrams
+async function testStringsExtended() {
+  const id = "strings-ext";
+  const { samples, acceptMode, strictness } = getCfg();
+  const size = 32;
+  const counts = new Map(); // char -> count
+  let bad = 0;
+  // per-position char counts for top alphabet later
+  const posCounts = Array.from({length:size}, () => new Map());
+  // bigrams
+  const bigramCounts = new Map();
+  let totalChars = 0;
+  let totalBigrams = 0;
+
+  updateTestUI(id, { verdict:"PENDING", pct:0, note:`Sampling ${samples} strings…`, meta:`GET <b>/strings?size=${size}&symbols=false</b>`, chartCounts:[0], chartExpected:null });
+
+  await runWithPool(samples, async () => {
+    const r = await fetchOne(`/strings?size=${size}&symbols=false`);
+    const v = parseValue(r.text, acceptMode, "string");
+    const s = String(v).trim().split(/\\r?\\n/)[0];
+    if (!s || s.length !== size) { bad++; return; }
+    for (let i=0;i<s.length;i++){
+      const ch = s[i];
+      counts.set(ch, (counts.get(ch) || 0) + 1);
+      posCounts[i].set(ch, (posCounts[i].get(ch)||0) + 1);
+      totalChars++;
+      if (i < s.length - 1){
+        const bg = ch + s[i+1];
+        bigramCounts.set(bg, (bigramCounts.get(bg)||0) + 1);
+        totalBigrams++;
+      }
+    }
+  }, (done) => updateTestUI(id, { verdict:"PENDING", pct:(done/samples)*100, note:`Sampling… (${done}/${samples})`, chartCounts:[done], chartExpected:null }));
+
+  const alphabet = Array.from(counts.entries()).map(([ch,c])=>({ch,c}));
+  alphabet.sort((a,b)=>b.c-a.c);
+  const k = alphabet.length;
+
+  let verdict = "PASS";
+  const worst = (a,b) => (a==="FAIL"||b==="FAIL") ? "FAIL" : ((a==="WARN"||b==="WARN") ? "WARN" : "PASS");
+
+  // overall char-frequency chi-square across observed alphabet
+  let pChar = null;
+  if (bad>0 || k < 10) {
+    verdict = "FAIL";
+  } else {
+    const expected = totalChars / k;
+    let chi2=0;
+    for (const {c} of alphabet) chi2 += (c-expected)*(c-expected)/expected;
+    pChar = chiSquarePValue(chi2, k-1);
+    verdict = worst(verdict, verdictFromP(pChar, strictness));
+  }
+
+  // per-position chi-square (detects position bias): for each position, compute chi-square on top alphabet subset (to keep dof reasonable)
+  // Use top M characters, where M = min(k, 32) and lump "other"
+  const M = Math.min(k, 32);
+  const topChars = new Set(alphabet.slice(0,M).map(x=>x.ch));
+  let minPosP = 1;
+  let worstPos = -1;
+  for (let i=0;i<size;i++){
+    const m = posCounts[i];
+    const obs = new Array(M+1).fill(0); // top M + other
+    for (const [ch,c] of m.entries()){
+      const idx = topChars.has(ch) ? alphabet.slice(0,M).findIndex(x=>x.ch===ch) : M;
+      if (idx >= 0) obs[idx] += c;
+    }
+    const n = obs.reduce((a,b)=>a+b,0) || 1;
+    // expected proportional to overall top-char distribution at that position (use global distribution)
+    const probs = [];
+    const totalTop = alphabet.slice(0,M).reduce((a,b)=>a+b.c,0);
+    for (let j=0;j<M;j++) probs.push(alphabet[j].c / totalChars);
+    const pOther = 1 - probs.reduce((a,b)=>a+b,0);
+    probs.push(Math.max(0,pOther));
+
+    let chi2=0;
+    let dof=0;
+    for (let j=0;j<M+1;j++){
+      const e = n * probs[j];
+      if (e <= 0) continue;
+      chi2 += (obs[j]-e)*(obs[j]-e)/e;
+      dof++;
+    }
+    dof = Math.max(1, dof-1);
+    const p = chiSquarePValue(chi2, dof);
+    if (p < minPosP) { minPosP = p; worstPos = i; }
+  }
+  const posVerd = verdictFromP(minPosP, strictness);
+  verdict = worst(verdict, posVerd);
+
+  // bigram chi-square on top 16 chars only (256 bigrams)
+  const B = Math.min(k, 16);
+  const bgChars = alphabet.slice(0,B).map(x=>x.ch);
+  const bgIndex = new Map(bgChars.map((c,i)=>[c,i]));
+  const bgCounts = new Array(B*B).fill(0);
+  let bgN = 0;
+  for (const [bg,c] of bigramCounts.entries()){
+    const a = bg[0], b = bg[1];
+    if (!bgIndex.has(a) || !bgIndex.has(b)) continue;
+    bgCounts[bgIndex.get(a)*B + bgIndex.get(b)] += c;
+    bgN += c;
+  }
+  let pBg = null;
+  if (bgN > 5000) {
+    const expected = bgN / (B*B);
+    let chi2=0;
+    for (const c of bgCounts) chi2 += (c-expected)*(c-expected)/expected;
+    pBg = chiSquarePValue(chi2, B*B - 1);
+    verdict = worst(verdict, verdictFromP(pBg, strictness));
+  }
+
+  const top = alphabet.slice(0, 12);
+  const bottom = alphabet.slice(-12).reverse();
+
+  // chart: show top 48 counts
+  const chartCounts = alphabet.slice(0, 48).map(x=>x.c);
+  const expectedTop = chartCounts.length ? (totalChars / k) : null;
+
+  const details =
+`Requests: ${samples} (size=${size})
+Invalid outputs: ${bad}
+Total chars: ${totalChars}
+Alphabet size observed: ${k}
+
+Char-frequency chi-square (across observed alphabet):
+- p=${pChar==null ? "—" : pChar.toFixed(6)}
+
+Per-position bias (chi-square per position using top ${M} chars + other):
+- worst position: ${worstPos} (0-indexed)
+- min p across positions: ${minPosP.toFixed(6)} verdict=${posVerd}
+
+Bigram chi-square on top ${B} chars (subset bigrams):
+- bigrams counted in subset: ${bgN}
+- p=${pBg==null ? "—" : pBg.toFixed(6)}
+
+Most common chars:
+${top.map(x => `${JSON.stringify(x.ch)}: ${x.c}`).join("\\n")}
+
+Least common chars:
+${bottom.map(x => `${JSON.stringify(x.ch)}: ${x.c}`).join("\\n")}`;
+
+  updateTestUI(id, {
+    verdict,
+    pct: 100,
+    pText: `${Math.min(pChar ?? 1, minPosP, pBg ?? 1).toFixed(6)}`, pValueRaw: Math.min(pChar ?? 1, minPosP, pBg ?? 1),
+    note: bad ? `Invalid outputs: ${bad}` : `k=${k} posMinP=${minPosP.toFixed(4)}`,
+    meta: `Chars: <b>${totalChars}</b> • k: <b>${k}</b>`,
+    details,
+    chartCounts,
+    chartExpected: expectedTop
+  });
+
+  storeResult(id, { id, group:"Strings", verdict, pValue: Math.min(pChar ?? 1, minPosP, pBg ?? 1),
+    samples, endpoint:`/strings?size=${size}&symbols=false`, notes: bad ? `invalid=${bad}` : "ok", details,
+    alphabetSize:k, pChar, minPosP, pBigram:pBg, worstPosition:worstPos, topChars: top });
+
+  return verdict;
+}
+
+// 6) /cards: single-draw distribution + multi-draw duplicate rate
+async function testCardsExtended() {
+  const id = "cards-ext";
+  const { samples, acceptMode, strictness } = getCfg();
+
+  // We'll test both jokers=false and jokers=true because the API supports it.
+  const scenarios = [
+    { jokers: false, decks: 1, label: "no jokers", expectedUnique: 52 },
+    { jokers: true,  decks: 1, label: "with jokers", expectedUnique: 54 },
+  ];
+
+  let overallVerdict = "PASS";
+  const worst = (a,b) => (a==="FAIL"||b==="FAIL") ? "FAIL" : ((a==="WARN"||b==="WARN") ? "WARN" : "PASS");
+
+  const scenarioResults = [];
+  let totalBad = 0;
+
+  updateTestUI(id, { verdict:"PENDING", pct:0, note:`Sampling /cards…`, meta:`GET <b>/cards</b> (2 scenarios)`, chartCounts:new Array(32).fill(0), chartExpected:null });
+
+  // Helper: chi-square on single-card distribution
+  async function singleCardDist(sc, phaseBase){
+    const counts = new Map();
+    let bad = 0;
+
+    await runWithPool(samples, async () => {
+      const r = await fetchOne(`/cards?decks=${sc.decks}&jokers=${sc.jokers}&cards=1`);
+      const arr = parseCardsFromResponse(r.text, acceptMode, 1);
+      const card = (arr[0] || "").trim();
+      if (!card) { bad++; return; }
+      counts.set(card, (counts.get(card)||0) + 1);
+    }, (done) => {
+      const prog = ((phaseBase*samples)+done)/(samples*4) * 100;
+      const topArr = Array.from(counts.values()).sort((a,b)=>b-a).slice(0,32);
+      while (topArr.length < 32) topArr.push(0);
+      updateTestUI(id, { verdict:"PENDING", pct:prog, note:`${sc.label}: single-card… (${done}/${samples})`, chartCounts:topArr, chartExpected:null });
+    });
+
+    const cats = Array.from(counts.entries()).map(([card,c])=>({card,c}));
+    cats.sort((a,b)=>b.c-a.c);
+    const k = cats.length;
+
+    let pSingle = null;
+    let verdict = "PASS";
+
+    if (bad > 0) verdict = "FAIL";
+    else {
+      // Unique count check: allow some slack at smaller N
+      const minOk = Math.min(sc.expectedUnique, Math.max(10, Math.floor(sc.expectedUnique * 0.85)));
+      if (k < minOk) verdict = "FAIL";
+      else if (k < sc.expectedUnique && samples >= 5000) verdict = worst(verdict, "WARN");
+
+      const expected = samples / k;
+      let chi2=0;
+      for (const {c} of cats) chi2 += (c-expected)*(c-expected)/expected;
+      pSingle = chiSquarePValue(chi2, k-1);
+      verdict = worst(verdict, verdictFromP(pSingle, strictness));
+    }
+
+    return { counts, cats, k, bad, pSingle, verdict };
+  }
+
+  // Helper: duplicate-rate check for multi-draw
+  async function multiDraw(sc, cardsN, phaseBase){
+    let dupHands = 0;
+    let okHands = 0;
+    let bad = 0;
+
+    await runWithPool(samples, async () => {
+      const r = await fetchOne(`/cards?decks=${sc.decks}&jokers=${sc.jokers}&cards=${cardsN}`);
+      let arr = parseCardsFromResponse(r.text, acceptMode, cardsN).map(x => String(x).trim()).filter(Boolean);
+      if (arr.length > cardsN) arr = arr.slice(0, cardsN);
+      if (!arr || arr.length !== cardsN) { bad++; return; }
+      okHands++;
+      const set = new Set(arr);
+      if (set.size !== arr.length) dupHands++;
+    }, (done) => {
+      const prog = ((phaseBase*samples)+done)/(samples*4) * 100;
+      updateTestUI(id, { verdict:"PENDING", pct:prog, note:`${sc.label}: multi ${cardsN}… (${done}/${samples})`, chartCounts:null, chartExpected:null });
+    });
+
+    return { cardsN, dupHands, okHands, bad, dupRate: okHands ? dupHands/okHands : 0 };
+  }
+
+  // Run scenarios
+  for (let si=0; si<scenarios.length && !stopFlag; si++){
+    const sc = scenarios[si];
+
+    const dist = await singleCardDist(sc, si*2 + 0);
+    const m5  = await multiDraw(sc, 5,  si*2 + 1);
+
+    totalBad += dist.bad + m5.bad;
+
+    // Inference: with decks=1, multi-draw should usually be without replacement; dupRate should be ~0.
+    // We don't hard-fail replacement; we warn if dupRate is high.
+    let mode = "unknown";
+    if (m5.okHands > 100) {
+      if (m5.dupRate < 0.001) mode = "likely without replacement";
+      else if (m5.dupRate > 0.01) mode = "likely with replacement (duplicates seen)";
+      else mode = "mixed/unclear";
+    }
+
+    // Full-deck draw check: cards = deck size should produce no duplicates and contain all uniques.
+    // We run a small number of checks proportional to samples/10 (capped) to keep it fast.
+    const fullN = sc.expectedUnique * sc.decks;
+    const fullChecks = Math.min(2000, Math.max(200, Math.floor(samples/10)));
+    let fullBad=0, fullDup=0, fullOk=0, fullUniqueOk=0;
+    await runWithPool(fullChecks, async () => {
+      const r = await fetchOne(`/cards?decks=${sc.decks}&jokers=${sc.jokers}&cards=${fullN}`);
+      let arr = parseCardsFromResponse(r.text, acceptMode, fullN).map(x => String(x).trim()).filter(Boolean);
+      if (arr.length > fullN) arr = arr.slice(0, fullN);
+      if (!arr || arr.length !== fullN) { fullBad++; return; }
+      fullOk++;
+      const set = new Set(arr);
+      if (set.size !== arr.length) fullDup++;
+      if (set.size === fullN) fullUniqueOk++;
+    });
+
+    const fullVerd = (fullBad>0) ? "FAIL" : (fullDup>0 ? "WARN" : "PASS");
+    const fullNote = `full-deck ${fullN}: ok=${fullOk} dupHands=${fullDup} bad=${fullBad}`;
+
+    let verdict = worst(dist.verdict, worst(verdictFromP(dist.pSingle ?? 1, strictness), "PASS"));
+    if (dist.bad>0 || m5.bad>0 || fullBad>0) verdict = worst(verdict, "FAIL");
+    // Warn if duplicates appear in cards=5 draws for single deck
+    if (m5.dupRate > 0.01) verdict = worst(verdict, "WARN");
+    verdict = worst(verdict, fullVerd);
+
+    overallVerdict = worst(overallVerdict, verdict);
+
+    const top = dist.cats.slice(0,8);
+    const bottom = dist.cats.slice(-8).reverse();
+
+    scenarioResults.push({
+      scenario: sc,
+      dist: { uniqueObserved: dist.k, pSingle: dist.pSingle, verdict: dist.verdict, bad: dist.bad, top, bottom },
+      multi5: m5,
+      fullDeck: { fullN, fullChecks, fullOk, fullDup, fullBad, fullUniqueOk, verdict: fullVerd, note: fullNote },
+      inferredMode: mode,
+      verdict
+    });
+  }
+
+  const chartTop = (scenarioResults[0]?.dist?.top || []).map(x=>x.c);
+  while (chartTop.length < 32) chartTop.push(0);
+
+  const details =
+`Scenarios: ${scenarioResults.length}
+Total invalid outputs: ${totalBad}
+
+${scenarioResults.map(sr => {
+  const sc = sr.scenario;
+  return `--- ${sc.label} (decks=${sc.decks}, jokers=${sc.jokers}) ---
+Single-card:
+- samples=${samples}
+- invalid=${sr.dist.bad}
+- uniqueObserved=${sr.dist.uniqueObserved} (expected≈${sc.expectedUnique*sc.decks})
+- p=${sr.dist.pSingle==null ? "—" : sr.dist.pSingle.toFixed(6)}  verdict=${sr.dist.verdict}
+
+Multi-draw (cards=5):
+- okHands=${sr.multi5.okHands}  invalid=${sr.multi5.bad}
+- dupHands=${sr.multi5.dupHands} dupRate=${(100*sr.multi5.dupRate).toFixed(3)}%
+- inferred mode: ${sr.inferredMode}
+
+Full-deck draw (cards=${sr.fullDeck.fullN}):
+- checks=${sr.fullDeck.fullChecks} ok=${sr.fullDeck.fullOk} invalid=${sr.fullDeck.fullBad}
+- dupHands=${sr.fullDeck.fullDup}  allUniqueHands=${sr.fullDeck.fullUniqueOk}
+- verdict=${sr.fullDeck.verdict}
+
+Most common:
+${sr.dist.top.map(x=>`${x.card}: ${x.c}`).join("\n")}
+Least common:
+${sr.dist.bottom.map(x=>`${x.card}: ${x.c}`).join("\n")}`;
+}).join("\n\n")}`;
+
+  updateTestUI(id, {
+    verdict: overallVerdict,
+    pct: 100,
+    pText: (scenarioResults.map(sr => sr.dist.pSingle ?? 1).reduce((a,b)=>Math.min(a,b), 1)).toFixed(6),
+    note: totalBad ? `Invalid outputs: ${totalBad}` : `Worst: ${overallVerdict}`,
+    meta: `Scenarios: <b>${scenarioResults.length}</b> • full-checks: <b>${Math.min(2000, Math.max(200, Math.floor(samples/10)))}</b>`,
+    details,
+    chartCounts: chartTop,
+    chartExpected: null
+  });
+
+  storeResult(id, { id, group:"Cards", verdict: overallVerdict, pValue: scenarioResults.map(sr=>sr.dist.pSingle??1).reduce((a,b)=>Math.min(a,b),1),
+    samples, endpoint:"/cards (no-jokers + jokers)", notes: totalBad ? `invalid=${totalBad}` : "ok", details, scenarioResults });
+
+  return overallVerdict;
+}
+
+/** ------------ Orchestration ------------ **/
+const testDefs = [
+    { id:"ints-multi", group:"Integers", title:"GET / (multi-range + correlation + runs)", subtitle:"Chi-square on multiple ranges + lag-1 correlation + runs test.", unitsFromCfg: cfg => cfg.samples*7, fn: testIntegersMulti },
+  { id:"percent-multi", group:"Percent", title:"GET /percent (multi-target)", subtitle:"Binomial z-tests for 1,5,12.5,50,95,99.", unitsFromCfg: cfg => cfg.samples*6, fn: testPercentMulti },
+  { id:"bytes-ext", group:"Bytes", title:"GET /bytes (frequency + entropy + serial + runs)", subtitle:"Byte chi-square + entropy + serial correlation + monobit + runs.", unitsFromCfg: cfg => Math.ceil(cfg.samples/32), fn: testBytesExtended },
+  { id:"strings-ext", group:"Strings", title:"GET /strings (char + position + bigrams)", subtitle:"Char chi-square + per-position bias + bigram check.", unitsFromCfg: cfg => cfg.samples, fn: testStringsExtended },
+  { id:"cards-ext", group:"Cards", title:"GET /cards (distribution + duplicates)", subtitle:"Single-card distribution + multi-draw duplicate rate (cards=5,10).", unitsFromCfg: cfg => cfg.samples*3, fn: testCardsExtended },
+];
+
+function resetUI(){
+  setHtmlSafe(testsEl, "");
+  setHtmlSafe(tabsEl, "");
+  for (const k of Object.keys(results)) delete results[k];
+  reqCounter = 0;
+  setTextSafe(elapsedEl, "0.0s");
+  setTextSafe(reqCountEl, "0");
+  setProgress(0, 1);
+  setOverall("Running…");
+
+  // tabs
+  const groups = ["All", ...Array.from(new Set(testDefs.map(t=>t.group)))];
+  for (const g of groups) makeTab(g);
+  setActiveTab("All");
+
+  // cards
+  for (const t of testDefs) {
+    makeTestCard(t.id, t.group, t.title, t.subtitle);
+    document.getElementById(`${t.id}-runBtn`).onclick = async () => {
+      stopFlag = false;
+      setOverall("Running…");
+      startTimer();
+      try { await runSingle(t.id); }
+      finally { stopTimer(); setOverall(computeOverall()); }
+    };
+    document.getElementById(`${t.id}-repeatBtn`).onclick = async () => {
+      stopFlag = false;
+      setOverall("Running…");
+      startTimer();
+      try { await runRepeat(t.id, 3); }
+      finally { stopTimer(); setOverall(computeOverall()); }
+    };
+  }
+}
+
+async function runSingle(id){
+  const t = testDefs.find(x => x.id === id);
+  if (!t) return;
+  const btn = document.getElementById(`${id}-runBtn`);
+  btn.disabled = true;
+
+  const cfg = getCfg();
+  const units = t.units ?? (t.unitsFromCfg ? t.unitsFromCfg(cfg) : 1);
+
+  try {
+    await t.fn();
+  } catch (e) {
+    console.error(e);
+    updateTestUI(id, { verdict:"FAIL", pct:100, pText:"—", note:"Error", meta:"—", details:String(e?.message || e) });
+    storeResult(id, { id, group:t.group, verdict:"FAIL", pValue:null, samples: units, endpoint:"(see UI)", notes:"exception", details:String(e?.message || e) });
+  } finally {
+    doneUnits += units;
+    setProgress(doneUnits, totalUnits);
+    btn.disabled = false;
+  }
+
+async function runRepeat(id, times=3){
+  const t = testDefs.find(x => x.id === id);
+  if (!t) return;
+  const runBtn = document.getElementById(`${id}-runBtn`);
+  const repBtn = document.getElementById(`${id}-repeatBtn`);
+  runBtn.disabled = true;
+  repBtn.disabled = true;
+
+  const snapshots = [];
+  try {
+    for (let i=0;i<times;i++){
+      if (stopFlag) break;
+      // run the underlying test
+      await t.fn();
+      // capture snapshot from results store if available
+      if (results[id]) snapshots.push({ i: i+1, verdict: results[id].verdict, pValue: results[id].pValue ?? null, notes: results[id].notes ?? "" });
+    }
+
+    // summarize
+    const counts = { PASS:0, WARN:0, FAIL:0 };
+    for (const s of snapshots) if (counts[s.verdict] != null) counts[s.verdict]++;
+
+    const pVals = snapshots.map(s => s.pValue).filter(v => typeof v === "number" && !Number.isNaN(v));
+    pVals.sort((a,b)=>a-b);
+    const minP = pVals.length ? pVals[0] : null;
+    const medP = pVals.length ? pVals[Math.floor(pVals.length/2)] : null;
+
+    const summary =
+`\\n\\nRepeat-run summary (${snapshots.length} runs)\\n` +
+`- PASS: ${counts.PASS}  WARN: ${counts.WARN}  FAIL: ${counts.FAIL}\\n` +
+(pVals.length ? `- p-value: min=${minP.toFixed(6)} median=${medP.toFixed(6)}\\n` : `- p-value: (not available)\\n`) +
+`- Tip: If FAIL/WARN repeats across runs and grows worse with larger samples, that's stronger evidence of a real issue.\\n`;
+
+    // Append to current details UI
+    const detailsEl = document.getElementById(`${id}-details`);
+    if (detailsEl) setTextSafe(detailsEl, (detailsEl.textContent || "") + summary);
+
+    // Store in results
+    if (results[id]) results[id].repeatRuns = { times: snapshots.length, counts, minP, medianP: medP, snapshots };
+  } catch (e) {
+    console.error(e);
+  } finally {
+    runBtn.disabled = false;
+    repBtn.disabled = false;
+  }
+}
+
+}
+
+async function runAll(samplesOverride=null){
+  stopFlag = false;
+  const samplesEl = document.getElementById("samples");
+  const prevSamples = samplesEl.value;
+  if (samplesOverride != null) samplesEl.value = String(samplesOverride);
+
+  resetUI();
+  startTimer();
+
+  const cfg = getCfg();
+  totalUnits = testDefs.reduce((a,t)=> a + (t.units ?? (t.unitsFromCfg ? t.unitsFromCfg(cfg) : 1)), 0);
+  doneUnits = 0;
+  setProgress(0, totalUnits);
+
+  try {
+    for (const t of testDefs) {
+      if (stopFlag) break;
+      await runSingle(t.id);
+      setOverall(computeOverall());
+    }
+  } finally {
+    stopTimer();
+    if (samplesOverride != null) samplesEl.value = prevSamples;
+    setOverall(stopFlag ? "Stopped" : computeOverall());
+    setProgress(totalUnits, totalUnits);
+  }
+}
+
+/** ------------ Export ------------ **/
+function exportJSON(){
+  const payload = {
+    generatedAt: new Date().toISOString(),
+    config: { ...getCfg(), apiKey: "(redacted)" },
+    summary: { overall: computeOverall(), requests: reqCounter },
+    results
+  };
+  download("rng-results.json", JSON.stringify(payload, null, 2), "application/json");
+}
+
+function exportCSV(){
+  const rows = [];
+  rows.push(["id","group","endpoint","verdict","pValue","samples","notes","timestamp"].join(","));
+  for (const [id, r] of Object.entries(results)) {
+    rows.push([
+      csvEscape(id),
+      csvEscape(r.group || ""),
+      csvEscape(r.endpoint || ""),
+      csvEscape(r.verdict || ""),
+      csvEscape(r.pValue == null ? "" : String(r.pValue)),
+      csvEscape(String(r.samples ?? r.samplesPerRange ?? r.samplesPerTarget ?? "")),
+      csvEscape(r.notes || ""),
+      csvEscape(r.timestamp || "")
+    ].join(","));
+  }
+  download("rng-results.csv", rows.join("\\n"), "text/csv");
+}
+
+/** ------------ Wire buttons + keys ------------ **/
+document.getElementById("runAllBtn").onclick = () => runAll(null);
+document.getElementById("smokeBtn").onclick = () => runAll(2000);
+document.getElementById("stopBtn").onclick = () => { stopFlag = true; setOverall("Stopping…"); };
+document.getElementById("exportJsonBtn").onclick = exportJSON;
+document.getElementById("exportCsvBtn").onclick = exportCSV;
+
+document.addEventListener("keydown", (e) => {
+  if (e.target && ["INPUT","TEXTAREA","SELECT"].includes(e.target.tagName)) return;
+  if (e.key === "r") runAll(null);
+  if (e.key === "s") { stopFlag = true; setOverall("Stopping…"); }
+  if (e.key === "e") exportJSON();
+});
+
+/** ------------ Initial render ------------ **/
+resetUI();
+setOverall("Not run");
+setProgress(0, 1);
+</script>
+</body>
+</html>

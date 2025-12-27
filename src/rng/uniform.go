@@ -10,22 +10,19 @@ import (
 // Integer-only rejection sampling (no floats). This is unbiased assuming the uint32 stream is uniform.
 func UniformInt32(r io.Reader, h *Health, min int, max int) (int32, error) {
 	// Bounds
-	if min < -1000000000 {
-		return 0, errors.New("the minimum value should not be lower than -1,000,000,000")
-	}
-	if min > 1000000000 {
-		return 0, errors.New("the minimum value should not be higher than 1,000,000,000")
-	}
-	if max < -1000000000 {
-		return 0, errors.New("the maximum value should not be lower than -1,000,000,000")
-	}
-	if max > 1000000000 {
-		return 0, errors.New("the maximum value should not be higher than 1,000,000,000")
-	}
-	if min > max {
-		return 0, errors.New("the minimum value should be smaller than or equal to the maximum value")
+	minBound := -1_000_000_000
+	maxBound := 1_000_000_000
+
+	if min < minBound || min > maxBound ||
+		max < minBound || max > maxBound {
+		return 0, errors.New("min and max must be between -1,000,000,000 and 1,000,000,000")
 	}
 
+	if min > max {
+		return 0, errors.New("min must be less than or equal to max")
+	}
+
+	// Range and mod bias elimination
 	rangeSize := uint32(max - min + 1)
 	if rangeSize == 0 {
 		return 0, errors.New("invalid range size")
@@ -49,21 +46,4 @@ func UniformInt32(r io.Reader, h *Health, min int, max int) (int32, error) {
 		}
 		// reject and retry
 	}
-}
-
-func BuildCharset(lowers, uppers, numbers, symbols bool) []byte {
-	var b []byte
-	if lowers {
-		b = append(b, []byte("abcdefghijklmnopqrstuvwxyz")...)
-	}
-	if uppers {
-		b = append(b, []byte("ABCDEFGHIJKLMNOPQRSTUVWXYZ")...)
-	}
-	if numbers {
-		b = append(b, []byte("0123456789")...)
-	}
-	if symbols {
-		b = append(b, []byte("!#$%&()*+,-./:;<=>?@[]^_{|}~")...)
-	}
-	return b
 }
